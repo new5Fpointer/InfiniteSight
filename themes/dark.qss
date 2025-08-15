@@ -1,0 +1,91 @@
+/* dark.qss - 深色主题 */
+
+QMainWindow,
+QDockWidget,
+QTreeWidget,
+QScrollArea,
+QWidget {
+    background-color: #2D2D30;
+    color: #E0E0E0;
+    font-family: 'Segoe UI';
+    font-size: 10pt;
+}
+
+QMenuBar {
+    background-color: #252526;
+    color: #CCCCCC;
+    border-bottom: 1px solid #1E1E1E;
+}
+
+QMenuBar::item:selected {
+    background-color: #3F3F46;
+}
+
+QLabel {
+    background-color: transparent;
+}
+
+QTreeWidget::item {
+    height: 28px;
+    padding: 4px;
+}
+
+QTreeWidget::item:selected {
+    background-color: #3F3F46;
+    color: #FFFFFF;
+}
+
+QSplitter::handle {
+    background-color: #3F3F46;
+    width: 6px;
+}
+
+QHeaderView::section {
+    background-color: #252526;
+    color: #CCCCCC;
+    padding: 4px;
+    border: none;
+    font-weight: bold;
+}
+
+QProgressBar {
+    border: 1px solid #3A3A3A;
+    border-radius: 3px;
+    text-align: center;
+    background-color: #1E1E1E;
+}
+
+QProgressBar::chunk {
+    background-color: #007ACC;
+}
+
+QTabWidget::pane {
+    border: 1px solid #007ACC;
+}
+
+QTabBar::tab {
+    background: #383838;
+    color: white;
+    padding: 8px;
+    border: 1px solid #007ACC;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    background: #007ACC;
+    color: white;
+}
+
+QPushButton {
+    background-color: #005A9E;
+    color: white;
+    border: 1px solid #007ACC;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+QPushButton:hover {
+    background-color: #007ACC;
+}

@@ -26,16 +26,14 @@ class SettingsManager:
             "background_color": "#2D2D30",
             "accent_color": "#007ACC",
             "ui_font": "Segoe UI",
-            "ui_font_size": 10
+            "ui_font_size": 10,
+            "theme": "dark" 
         }
     }
 
     def __init__(self, app_name="InfiniteSight"):
         self.settings = QSettings(app_name, "Settings")
         self.current_settings = self.load_settings()
-
-    def load_settings(self):
-        """加载保存的设置，如果没有则使用默认值"""
 
     def load_settings(self):
         """加载保存的设置，如果没有则使用默认值"""
@@ -78,7 +76,9 @@ class SettingsManager:
             "ui_font": self.settings.value("appearance/ui_font", 
                                           self.DEFAULT_SETTINGS["appearance"]["ui_font"]),
             "ui_font_size": self.settings.value("appearance/ui_font_size", 
-                                               self.DEFAULT_SETTINGS["appearance"]["ui_font_size"], type=int)
+                                               self.DEFAULT_SETTINGS["appearance"]["ui_font_size"], type=int),
+            "theme": self.settings.value("appearance/theme",
+                                         self.DEFAULT_SETTINGS["appearance"]["theme"], type=str)
         }
         
         return settings
@@ -104,6 +104,7 @@ class SettingsManager:
         self.settings.setValue("appearance/accent_color", self.current_settings["appearance"]["accent_color"])
         self.settings.setValue("appearance/ui_font", self.current_settings["appearance"]["ui_font"])
         self.settings.setValue("appearance/ui_font_size", self.current_settings["appearance"]["ui_font_size"])
+        self.settings.setValue("appearance/theme", self.current_settings["appearance"]["theme"])
     
     def update_setting(self, category, key, value):
         """更新单个设置值"""
@@ -335,6 +336,11 @@ class SettingsDialog(QDialog):
         layout.addWidget(preview_group)
         
         self.appearance_tab.setLayout(layout)
+    
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems([self.tr("settings_theme_dark"),
+                                self.tr("settings_theme_light")])
+        font_layout.addRow(self.tr("settings_theme"), self.theme_combo)
 
     def choose_color(self, color_type):
         color_dialog = QColorDialog(self)
@@ -401,6 +407,7 @@ class SettingsDialog(QDialog):
         self.cache_size_spin.setValue(settings["performance"]["cache_size"])
         
         # 外观设置
+        theme = settings["appearance"]["theme"]
         bg_color = settings["appearance"]["background_color"]
         self.bg_color_btn.setStyleSheet(f"background-color: {bg_color};")
         
@@ -409,6 +416,7 @@ class SettingsDialog(QDialog):
         
         self.font_combo.setCurrentText(settings["appearance"]["ui_font"])
         self.font_size_spin.setValue(settings["appearance"]["ui_font_size"])
+        self.theme_combo.setCurrentIndex(0 if theme == "dark" else 1)
         
         # 更新预览
         self.update_preview()
@@ -446,12 +454,19 @@ class SettingsDialog(QDialog):
                                            self.font_combo.currentText())
         self.settings_manager.update_setting("appearance", "ui_font_size", 
                                            self.font_size_spin.value())
+        self.settings_manager.update_setting("appearance", "theme","dark" 
+                                            if self.theme_combo.currentIndex() == 0 else "light")
 
     def apply_settings(self):
-        """应用当前UI中的设置"""
+        print("⚙️ SettingsDialog.apply_settings() called") 
         self.get_settings_from_ui()
         self.settings_manager.save_settings()
-        self.parent().apply_settings()  # 通知主窗口应用新设置
+        
+        # 正确调用父窗口的 apply_settings()
+        if self.parent_window and hasattr(self.parent_window, 'apply_settings'):
+            print("📞 Calling parent.apply_settings()")
+            self.parent_window.apply_settings()
+        print("🎯 New background color:", self.settings_manager.current_settings["appearance"]["background_color"])
 
     def restore_defaults(self):
         """恢复默认设置"""

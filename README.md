@@ -3,6 +3,9 @@
 ```
 InfiniteSight/
 ├── .venv/                  # 虚拟环境
+├─ themes/                  # 样式文件
+│  ├─ dark.qss              # 深色样式
+│  └─ light.qss             # 浅色样式
 ├── i18n/                   # 国际化文件
 │   ├── en_us.json          # 英文翻译
 │   └── zh_cn.json          # 中文翻译
