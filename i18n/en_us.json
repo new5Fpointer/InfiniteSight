@@ -57,5 +57,8 @@
     "settings_apply": "Apply",
     "window_state_normal": "Normal",
     "window_state_maximized": "Maximized",
-    "window_state_fullscreen": "Fullscreen"
+    "window_state_fullscreen": "Fullscreen",
+    "settings_theme": "Theme",
+    "settings_theme_dark": "Dark",
+    "settings_theme_light": "Light"
 }

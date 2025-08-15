@@ -1,0 +1,66 @@
+/* 基础样式 - 所有主题共享 */
+QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {
+    font-family: '@font_family';
+    font-size: @font_size pt;
+}
+
+QLabel {
+    background-color: transparent;
+}
+
+QTreeWidget::item {
+    height: 28px;
+    padding: 4px;
+}
+
+QSplitter::handle {
+    width: 6px;
+}
+
+QProgressBar {
+    border: 1px solid @border_color;
+    border-radius: 3px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: @accent_color;
+}
+
+QTabWidget::pane {
+    border: 1px solid @accent_color;
+}
+
+QTabBar::tab {
+    padding: 8px;
+    border: 1px solid @accent_color;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    background: @accent_color;
+    color: white;
+}
+
+QPushButton {
+    border: 1px solid @accent_color;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+QScrollBar:vertical {
+    border: none;
+    width: 10px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    min-height: 20px;
+}
+
+QScrollBar::add-line:vertical, 
+QScrollBar::sub-line:vertical {
+    background: none;
+}

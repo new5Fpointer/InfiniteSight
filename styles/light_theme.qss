@@ -1,0 +1,61 @@
+/* 浅色主题 */
+@import "base.qss";
+
+QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {
+    background-color: @background_color;
+    color: #333333;
+}
+
+QMenuBar {
+    background-color: #F0F0F0;
+    color: #333333;
+    border-bottom: 1px solid #DDDDDD;
+}
+
+QMenuBar::item:selected {
+    background-color: #E0E0E0;
+}
+
+QTreeWidget::item:selected {
+    background-color: #E0E0E0;
+    color: #333333;
+}
+
+QSplitter::handle {
+    background-color: #E0E0E0;
+}
+
+QHeaderView::section {
+    background-color: #F0F0F0;
+    color: #333333;
+    padding: 4px;
+    border: none;
+    font-weight: bold;
+}
+
+QProgressBar {
+    background-color: #F5F5F5;
+}
+
+QTabBar::tab {
+    background: #F0F0F0;
+    color: #333333;
+}
+
+QPushButton {
+    background-color: @accent_color_lighter;
+    color: #333333;
+}
+
+QPushButton:hover {
+    background-color: @accent_color;
+    color: white;
+}
+
+QScrollBar:vertical {
+    background: #F0F0F0;
+}
+
+QScrollBar::handle:vertical {
+    background: #C0C0C0;
+}

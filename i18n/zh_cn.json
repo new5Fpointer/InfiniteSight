@@ -62,5 +62,8 @@
     "info_panel_visible": "信息面板可见",
     "image_info_available": "图像信息可用",
     "exif_data_loaded": "EXIF数据已加载",
-    "file_info_displayed": "文件信息已显示"
+    "file_info_displayed": "文件信息已显示",
+    "settings_theme": "主题",
+    "settings_theme_dark": "深色",
+    "settings_theme_light": "浅色"
 }
