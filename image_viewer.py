@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWid
                              QScrollArea, QMenuBar, QDockWidget, QSplitter, QTreeWidget,
                              QTreeWidgetItem, QHeaderView, QProgressBar, QApplication, QDialog)
 from PyQt6.QtGui import QFont, QMovie, QColor, QAction, QActionGroup
-from PyQt6.QtCore import Qt, QThread, QSize, QFile, QTextStream
+from PyQt6.QtCore import Qt, QThread, QSize
 from settings import SettingsManager, SettingsDialog
 from image_loader import ImageLoader
 from language_manager import LanguageManager
@@ -49,7 +49,7 @@ class ImageViewer(QMainWindow):
         
         # 创建加载动画
         self.loading_movie = QMovie()
-        self.loading_movie.setFileName("loading.gif")  # 需要提供加载动画GIF
+        self.loading_movie.setFileName("loading.gif")
         self.loading_movie.setScaledSize(QSize(50, 50))
         self.loading_label.setMovie(self.loading_movie)
         
@@ -88,9 +88,6 @@ class ImageViewer(QMainWindow):
         # 初始化语言管理器
         self.language_manager = LanguageManager(self.settings_manager)
         
-        # 设置窗口标题
-        self.setWindowTitle(self.tr("app_title"))
-
         # 创建菜单
         self._create_menu()
         
@@ -101,12 +98,8 @@ class ImageViewer(QMainWindow):
         self.loader_thread = None
         self.image_loader = None
         
-        # 现在所有UI组件都已创建完成，可以安全地应用设置了
-        self.apply_settings()
-        self.apply_theme()
-        
-        # 应用初始窗口状态
-        self.apply_window_state()
+        # 应用初始设置
+        self.apply_initial_settings()
     
     def tr(self, key, **kwargs):
         """翻译文本的便捷方法"""
@@ -133,7 +126,6 @@ class ImageViewer(QMainWindow):
         
         # 最近文件菜单
         self.recent_menu.setTitle(self.tr("menu_recent"))
-        # 只有在清除动作存在时才设置文本
         if hasattr(self, 'clear_action'):
             self.clear_action.setText(self.tr("clear_recent"))
         
@@ -143,6 +135,26 @@ class ImageViewer(QMainWindow):
         # 更新最近文件菜单
         self.update_recent_files_menu()
 
+    def apply_initial_settings(self):
+        """应用初始设置（窗口状态、语言、主题等）"""
+        # 应用窗口状态
+        self.apply_window_state()
+        
+        # 应用语言设置
+        self.language_manager.load_language(self.settings["general"]["language"])
+        self.retranslate_ui()
+        
+        # 应用主题
+        self.apply_theme()
+        
+        # 应用性能设置
+        self.apply_performance_settings()
+        
+        # 应用信息面板设置
+        self.info_dock.setVisible(self.settings["general"]["show_info_panel"])
+        if hasattr(self, 'info_toggle'):
+            self.info_toggle.setChecked(self.settings["general"]["show_info_panel"])
+
     def apply_window_state(self):
         """应用保存的窗口状态"""
         state = self.settings["general"]["default_window_state"]
@@ -150,19 +162,16 @@ class ImageViewer(QMainWindow):
             self.showMaximized()
         elif state == "fullscreen":
             self.showFullScreen()
-        else:
-            self.showNormal()
 
-    def apply_settings(self):
-        """应用所有设置"""
-        print("🔧 apply_settings() called") 
+    def apply_runtime_settings(self):
+        """应用运行时设置（当设置变更时调用）"""
         # 重新加载设置
         self.settings = self.settings_manager.current_settings
 
         # 应用性能设置
         self.apply_performance_settings()
 
-        # ✅ 添加这行：重新应用外观设置
+        # 应用外观设置
         self.apply_appearance_settings()
 
         # 应用信息面板设置
@@ -179,7 +188,6 @@ class ImageViewer(QMainWindow):
 
     def apply_performance_settings(self):
         """应用性能优化设置"""
-        # 创建基本样式表
         bg_color = self.settings["appearance"]["background_color"]
         accent_color = self.settings["appearance"]["accent_color"]
         font_family = self.settings["appearance"]["ui_font"]
@@ -286,12 +294,9 @@ class ImageViewer(QMainWindow):
                     background-color: {accent_color};
                 }}
             """)
-        self.settings = self.settings_manager.current_settings  # 重新同步
-        self.apply_theme()                                      # 立即刷新
 
     def apply_appearance_settings(self):
-        """应用外观设置"""
-        print("🎨 apply_appearance_settings() called") 
+        """应用外观设置（字体、颜色等）"""
         # 获取设置
         font_family = self.settings["appearance"]["ui_font"]
         font_size = self.settings["appearance"]["ui_font_size"]
@@ -303,9 +308,10 @@ class ImageViewer(QMainWindow):
         self.menuBar().setFont(app_font)
 
     def _create_menu(self):
+        """创建菜单系统"""
         menu_bar = QMenuBar(self)
 
-        # ── 文件菜单 ---------------------------------
+        # 文件菜单
         self.file_menu = menu_bar.addMenu(self.tr("menu_file"))
 
         self.open_action = QAction(self.tr("menu_open"), self)
@@ -324,7 +330,7 @@ class ImageViewer(QMainWindow):
         self.exit_action.triggered.connect(self.close)
         self.file_menu.addAction(self.exit_action)
 
-        # ── 视图菜单 ---------------------------------
+        # 视图菜单
         self.view_menu = menu_bar.addMenu(self.tr("menu_view"))
 
         # 信息面板开关
@@ -340,10 +346,8 @@ class ImageViewer(QMainWindow):
         theme_ag = QActionGroup(self)  # 互斥组
         theme_ag.setExclusive(True)
 
-        self.dark_action = QAction(self.tr("settings_theme_dark"), self,
-                                   checkable=True)
-        self.light_action = QAction(self.tr("settings_theme_light"), self,
-                                    checkable=True)
+        self.dark_action = QAction(self.tr("settings_theme_dark"), self, checkable=True)
+        self.light_action = QAction(self.tr("settings_theme_light"), self, checkable=True)
         for a in (self.dark_action, self.light_action):
             a.setActionGroup(theme_ag)
             theme_menu.addAction(a)
@@ -356,7 +360,7 @@ class ImageViewer(QMainWindow):
         self.dark_action.setChecked(current_theme == "dark")
         self.light_action.setChecked(current_theme == "light")
 
-        # ── 设置菜单 ---------------------------------
+        # 设置菜单
         self.settings_menu = menu_bar.addMenu(self.tr("menu_settings"))
         self.settings_action = QAction(self.tr("menu_settings_app"), self)
         self.settings_action.triggered.connect(self._open_settings)
@@ -384,7 +388,7 @@ class ImageViewer(QMainWindow):
         
         self.recent_menu.addSeparator()
         
-        # 确保清除动作被保存为实例变量
+        # 清除最近文件操作
         self.clear_action = QAction(self.tr("clear_recent"), self)
         self.clear_action.triggered.connect(self.clear_recent_files)
         self.recent_menu.addAction(self.clear_action)
@@ -424,11 +428,13 @@ class ImageViewer(QMainWindow):
             self.statusBar().showMessage(self.tr("status_settings_applied"))
 
     def _toggle_info_panel(self, visible):
+        """切换信息面板可见性"""
         self.info_dock.setVisible(visible)
         self.settings_manager.update_setting("general", "show_info_panel", visible)
         self.settings_manager.save_settings()
 
     def _open_image(self):
+        """打开图像文件"""
         file_path, _ = QFileDialog.getOpenFileName(
             self, 
             "Open Image", 
@@ -481,8 +487,8 @@ class ImageViewer(QMainWindow):
             return
             
         if pixmap is None:
-            self.statusBar().showMessage(self.tr("error_load_image"))  # 替换原字符串
-            self.image_label.setText(self.tr("error_failed_load"))  # 替换原字符串
+            self.statusBar().showMessage(self.tr("error_load_image"))
+            self.image_label.setText(self.tr("error_failed_load"))
             return
         
         # 根据性能设置选择渲染模式
@@ -551,16 +557,18 @@ class ImageViewer(QMainWindow):
             err_root.setExpanded(True)
 
     def apply_theme(self):
+        """应用当前主题设置"""
         theme = self.settings["appearance"]["theme"]
         qss_path = os.path.join(os.path.dirname(__file__), "themes", f"{theme}.qss")
-        print("🎨 Loading theme:", qss_path)  # ← 加打印
         try:
             with open(qss_path, encoding="utf-8") as f:
                 self.setStyleSheet(f.read())
         except FileNotFoundError:
-            print("❌ Theme file not found:", qss_path)
+            # 主题文件缺失时使用默认样式
+            pass
 
     def switch_theme(self, theme_name: str):
+        """切换主题"""
         self.settings_manager.update_setting("appearance", "theme", theme_name)
         self.settings_manager.save_settings() 
         self.settings = self.settings_manager.current_settings

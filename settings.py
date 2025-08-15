@@ -3,13 +3,14 @@ from PyQt6.QtWidgets import (QDialog, QDialogButtonBox, QVBoxLayout, QTabWidget,
                              QWidget, QFormLayout, QGroupBox, QComboBox, QCheckBox, 
                              QSpinBox, QHBoxLayout, QPushButton, QLabel, QSizePolicy,
                              QColorDialog)
-from PyQt6.QtGui import QColor,QFontDatabase
+from PyQt6.QtGui import QColor, QFontDatabase
 from PyQt6.QtCore import Qt
 
 class SettingsManager:
+    # 默认应用设置
     DEFAULT_SETTINGS = {
         "general": {
-            "default_window_state": "normal",  # normal, maximized, fullscreen
+            "default_window_state": "normal",
             "show_info_panel": True,
             "recent_files": [],
             "max_recent_files": 5,
@@ -134,7 +135,7 @@ class SettingsDialog(QDialog):
     def __init__(self, settings_manager, parent=None):
         super().__init__(parent)
         self.settings_manager = settings_manager
-        self.parent_window = parent  # 保存父窗口引用
+        self.parent_window = parent
         self.setWindowTitle("Application Settings")
         self.setMinimumSize(700, 500)
         
@@ -165,7 +166,7 @@ class SettingsDialog(QDialog):
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
-        self.button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.apply_settings)
+        self.button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.save_and_apply)
         self.button_box.button(QDialogButtonBox.StandardButton.RestoreDefaults).clicked.connect(self.restore_defaults)
         
         # 主布局
@@ -184,6 +185,7 @@ class SettingsDialog(QDialog):
         return key
 
     def setup_general_tab(self):
+        """设置常规选项卡"""
         layout = QVBoxLayout()
         
         # 窗口状态
@@ -212,7 +214,6 @@ class SettingsDialog(QDialog):
         # 语言设置
         self.language_combo = QComboBox()
         self.language_combo.addItems(["English (en_us)", "简体中文 (zh_cn)"])
-        # 设置数据：en_us, zh_cn
         self.language_combo.setItemData(0, "en_us")
         self.language_combo.setItemData(1, "zh_cn")
         window_layout.addRow(self.tr("settings_language"), self.language_combo)
@@ -234,6 +235,7 @@ class SettingsDialog(QDialog):
         self.general_tab.setLayout(layout)
 
     def setup_performance_tab(self):
+        """设置性能选项卡"""
         layout = QVBoxLayout()
         
         # 界面优化
@@ -278,6 +280,7 @@ class SettingsDialog(QDialog):
         self.performance_tab.setLayout(layout)
 
     def setup_appearance_tab(self):
+        """设置外观选项卡"""
         layout = QVBoxLayout()
         
         # 颜色设置
@@ -319,6 +322,12 @@ class SettingsDialog(QDialog):
         self.font_size_spin.setRange(8, 20)
         font_layout.addRow(self.tr("settings_font_size"), self.font_size_spin)
         
+        # 主题选择
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems([self.tr("settings_theme_dark"),
+                                self.tr("settings_theme_light")])
+        font_layout.addRow(self.tr("settings_theme"), self.theme_combo)
+        
         font_group.setLayout(font_layout)
         layout.addWidget(font_group)
         
@@ -336,13 +345,9 @@ class SettingsDialog(QDialog):
         layout.addWidget(preview_group)
         
         self.appearance_tab.setLayout(layout)
-    
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItems([self.tr("settings_theme_dark"),
-                                self.tr("settings_theme_light")])
-        font_layout.addRow(self.tr("settings_theme"), self.theme_combo)
 
     def choose_color(self, color_type):
+        """颜色选择对话框"""
         color_dialog = QColorDialog(self)
         current_color = QColor(self.settings_manager.current_settings["appearance"][f"{color_type}_color"])
         color_dialog.setCurrentColor(current_color)
@@ -363,6 +368,7 @@ class SettingsDialog(QDialog):
             self.update_preview()
 
     def update_preview(self):
+        """更新外观预览"""
         # 获取当前外观设置
         bg_color = self.settings_manager.current_settings["appearance"]["background_color"]
         accent_color = self.settings_manager.current_settings["appearance"]["accent_color"]
@@ -434,7 +440,7 @@ class SettingsDialog(QDialog):
         
         # 获取语言设置
         lang_index = self.language_combo.currentIndex()
-        lang_code = self.language_combo.itemData(lang_index)  # 获取对应的语言代码
+        lang_code = self.language_combo.itemData(lang_index)
         self.settings_manager.update_setting("general", "language", lang_code)
         
         # 性能设置
@@ -454,19 +460,17 @@ class SettingsDialog(QDialog):
                                            self.font_combo.currentText())
         self.settings_manager.update_setting("appearance", "ui_font_size", 
                                            self.font_size_spin.value())
-        self.settings_manager.update_setting("appearance", "theme","dark" 
-                                            if self.theme_combo.currentIndex() == 0 else "light")
+        self.settings_manager.update_setting("appearance", "theme",
+                                            "dark" if self.theme_combo.currentIndex() == 0 else "light")
 
-    def apply_settings(self):
-        print("⚙️ SettingsDialog.apply_settings() called") 
+    def save_and_apply(self):
+        """保存设置并应用到主窗口"""
         self.get_settings_from_ui()
         self.settings_manager.save_settings()
         
-        # 正确调用父窗口的 apply_settings()
-        if self.parent_window and hasattr(self.parent_window, 'apply_settings'):
-            print("📞 Calling parent.apply_settings()")
-            self.parent_window.apply_settings()
-        print("🎯 New background color:", self.settings_manager.current_settings["appearance"]["background_color"])
+        # 通知主窗口应用新设置
+        if self.parent_window and hasattr(self.parent_window, 'apply_runtime_settings'):
+            self.parent_window.apply_runtime_settings()
 
     def restore_defaults(self):
         """恢复默认设置"""
@@ -474,19 +478,10 @@ class SettingsDialog(QDialog):
         self.load_current_settings()
         self.settings_manager.save_settings()
         
-        # 更新按钮文本
-        apply_btn = self.button_box.button(QDialogButtonBox.StandardButton.Apply)
-        if apply_btn:
-            apply_btn.setText(self.tr("settings_apply"))
-        
-        restore_btn = self.button_box.button(QDialogButtonBox.StandardButton.RestoreDefaults)
-        if restore_btn:
-            restore_btn.setText(self.tr("settings_restore_defaults"))
-        
-        if self.parent():
-            self.parent().apply_settings()  # 通知主窗口应用新设置
+        if self.parent_window:
+            self.parent_window.apply_runtime_settings()
 
     def accept(self):
         """点击OK时应用设置并关闭对话框"""
-        self.apply_settings()
+        self.save_and_apply()
         super().accept()
