@@ -195,7 +195,7 @@ class ImageViewer(QMainWindow):
         self.simple_style = self.settings["performance"]["simple_style"]
         
         # 应用其他性能设置（如果有）
-        # 例如：self.setProperty("quick_render", self.settings["performance"]["quick_render"])
+        self.setProperty("quick_render", self.settings["performance"]["quick_render"])
 
     def apply_appearance_settings(self):
         """应用外观设置（字体、颜色等）"""
@@ -219,33 +219,37 @@ class ImageViewer(QMainWindow):
             self.apply_theme_file()
 
     def apply_simple_style(self):
-        """应用简约样式表"""
-        # 获取当前外观设置
         bg_color = self.settings["appearance"]["background_color"]
         accent_color = self.settings["appearance"]["accent_color"]
         font_family = self.settings["appearance"]["ui_font"]
         font_size = self.settings["appearance"]["ui_font_size"]
-        
-        # 简约样式表
+        theme = self.settings["appearance"]["theme"]
+        text_color = "#E0E0E0"
+        if theme == "light":
+            bg_color = "#FFFFFF"
+            text_color = "#000000"
+            accent_color = "#007ACC"
+
         self.setStyleSheet(f"""
             QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {{
                 background-color: {bg_color};
-                color: #E0E0E0;
+                color: {text_color};
                 font-family: '{font_family}';
                 font-size: {font_size}pt;
             }}
             QMenuBar {{
-                background-color: #252526;
+                background-color: {bg_color};
                 color: #CCCCCC;
             }}
             QTreeWidget::item:selected {{
-                background-color: #3F3F46;
+                background-color: {accent_color};
+                color: #FFFFFF;
             }}
             QProgressBar {{
-                border: 1px solid #3A3A3A;
+                border: 1px solid {accent_color};
                 border-radius: 3px;
                 text-align: center;
-                background-color: #1E1E1E;
+                background-color: {bg_color};
             }}
             QProgressBar::chunk {{
                 background-color: {accent_color};
@@ -259,6 +263,7 @@ class ImageViewer(QMainWindow):
         try:
             if os.path.exists(qss_path):
                 with open(qss_path, encoding="utf-8") as f:
+                    print("Applying simple style now!")
                     self.setStyleSheet(f.read())
             else:
                 # 回退到简约样式
@@ -528,17 +533,6 @@ class ImageViewer(QMainWindow):
             self.info_tree.addTopLevelItem(err_root)
             err_root.addChild(QTreeWidgetItem([image_info["error"]]))
             err_root.setExpanded(True)
-
-    def apply_theme(self):
-        """应用当前主题设置"""
-        theme = self.settings["appearance"]["theme"]
-        qss_path = os.path.join(os.path.dirname(__file__), "themes", f"{theme}.qss")
-        try:
-            with open(qss_path, encoding="utf-8") as f:
-                self.setStyleSheet(f.read())
-        except FileNotFoundError:
-            # 主题文件缺失时使用默认样式
-            pass
 
     def switch_theme(self, theme_name: str):
         """切换主题"""
