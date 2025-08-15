@@ -144,11 +144,14 @@ class ImageViewer(QMainWindow):
         self.language_manager.load_language(self.settings["general"]["language"])
         self.retranslate_ui()
         
-        # 应用主题
+        # 应用性能设置（包括简约样式）
+        self.apply_performance_settings()
+        
+        # 应用主题（性能设置后应用，确保简约样式优先）
         self.apply_theme()
         
-        # 应用性能设置
-        self.apply_performance_settings()
+        # 应用外观设置（字体）
+        self.apply_appearance_settings()
         
         # 应用信息面板设置
         self.info_dock.setVisible(self.settings["general"]["show_info_panel"])
@@ -168,10 +171,13 @@ class ImageViewer(QMainWindow):
         # 重新加载设置
         self.settings = self.settings_manager.current_settings
 
-        # 应用性能设置
+        # 应用性能设置（包括简约样式）
         self.apply_performance_settings()
 
-        # 应用外观设置
+        # 应用主题（性能设置后应用，确保简约样式优先）
+        self.apply_theme()
+        
+        # 应用外观设置（字体）
         self.apply_appearance_settings()
 
         # 应用信息面板设置
@@ -183,117 +189,84 @@ class ImageViewer(QMainWindow):
         self.language_manager.load_language(self.settings["general"]["language"])
         self.retranslate_ui()
 
-        # 应用主题
-        self.apply_theme()
-
     def apply_performance_settings(self):
         """应用性能优化设置"""
+        # 保存简约样式标志
+        self.simple_style = self.settings["performance"]["simple_style"]
+        
+        # 应用其他性能设置（如果有）
+        # 例如：self.setProperty("quick_render", self.settings["performance"]["quick_render"])
+
+    def apply_appearance_settings(self):
+        """应用外观设置（字体、颜色等）"""
+        # 获取设置
+        font_family = self.settings["appearance"]["ui_font"]
+        font_size = self.settings["appearance"]["ui_font_size"]
+        
+        # 更新状态栏和菜单栏字体
+        app_font = QFont(font_family, font_size)
+        QApplication.instance().setFont(app_font)
+        self.statusBar().setFont(app_font)
+        self.menuBar().setFont(app_font)
+
+    def apply_theme(self):
+        """应用当前主题设置，考虑简约样式选项"""
+        if self.simple_style:
+            # 简约样式：使用内置样式表
+            self.apply_simple_style()
+        else:
+            # 完整样式：加载主题文件
+            self.apply_theme_file()
+
+    def apply_simple_style(self):
+        """应用简约样式表"""
+        # 获取当前外观设置
         bg_color = self.settings["appearance"]["background_color"]
         accent_color = self.settings["appearance"]["accent_color"]
         font_family = self.settings["appearance"]["ui_font"]
         font_size = self.settings["appearance"]["ui_font_size"]
         
-        if self.settings["performance"]["simple_style"]:
-            # 使用简化的样式表
-            self.setStyleSheet(f"""
-                QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {{
-                    background-color: {bg_color};
-                    color: #E0E0E0;
-                    font-family: '{font_family}';
-                    font-size: {font_size}pt;
-                }}
-                QMenuBar {{
-                    background-color: #252526;
-                    color: #CCCCCC;
-                }}
-                QTreeWidget::item:selected {{
-                    background-color: #3F3F46;
-                }}
-                QProgressBar {{
-                    border: 1px solid #3A3A3A;
-                    border-radius: 3px;
-                    text-align: center;
-                    background-color: #1E1E1E;
-                }}
-                QProgressBar::chunk {{
-                    background-color: {accent_color};
-                }}
-            """)
-        else:
-            # 完整样式表
-            self.setStyleSheet(f"""
-                QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {{
-                    background-color: {bg_color};
-                    color: #E0E0E0;
-                    font-family: '{font_family}';
-                    font-size: {font_size}pt;
-                }}
-                QMenuBar {{
-                    background-color: #252526;
-                    color: #CCCCCC;
-                    border-bottom: 1px solid #1E1E1E;
-                }}
-                QMenuBar::item:selected {{
-                    background-color: #3F3F46;
-                }}
-                QLabel {{
-                    background-color: transparent;
-                }}
-                QTreeWidget::item {{
-                    height: 28px;
-                    padding: 4px;
-                }}
-                QTreeWidget::item:selected {{
-                    background-color: #3F3F46;
-                    color: #FFFFFF;
-                }}
-                QSplitter::handle {{
-                    background-color: #3F3F46;
-                    width: 6px;
-                }}
-                QHeaderView::section {{
-                    background-color: #252526;
-                    color: #CCCCCC;
-                    padding: 4px;
-                    border: none;
-                    font-weight: bold;
-                }}
-                QProgressBar {{
-                    border: 1px solid #3A3A3A;
-                    border-radius: 3px;
-                    text-align: center;
-                    background-color: #1E1E1E;
-                }}
-                QProgressBar::chunk {{
-                    background-color: {accent_color};
-                }}
-                QTabWidget::pane {{
-                    border: 1px solid {accent_color};
-                }}
-                QTabBar::tab {{
-                    background: {QColor(bg_color).lighter(120).name()};
-                    color: white;
-                    padding: 8px;
-                    border: 1px solid {accent_color};
-                    border-bottom: none;
-                    border-top-left-radius: 4px;
-                    border-top-right-radius: 4px;
-                }}
-                QTabBar::tab:selected {{
-                    background: {accent_color};
-                    color: white;
-                }}
-                QPushButton {{
-                    background-color: {QColor(accent_color).darker(120).name()};
-                    color: white;
-                    border: 1px solid {accent_color};
-                    border-radius: 4px;
-                    padding: 5px;
-                }}
-                QPushButton:hover {{
-                    background-color: {accent_color};
-                }}
-            """)
+        # 简约样式表
+        self.setStyleSheet(f"""
+            QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {{
+                background-color: {bg_color};
+                color: #E0E0E0;
+                font-family: '{font_family}';
+                font-size: {font_size}pt;
+            }}
+            QMenuBar {{
+                background-color: #252526;
+                color: #CCCCCC;
+            }}
+            QTreeWidget::item:selected {{
+                background-color: #3F3F46;
+            }}
+            QProgressBar {{
+                border: 1px solid #3A3A3A;
+                border-radius: 3px;
+                text-align: center;
+                background-color: #1E1E1E;
+            }}
+            QProgressBar::chunk {{
+                background-color: {accent_color};
+            }}
+        """)
+
+    def apply_theme_file(self):
+        """从文件加载主题样式表"""
+        theme = self.settings["appearance"]["theme"]
+        qss_path = os.path.join(os.path.dirname(__file__), "themes", f"{theme}.qss")
+        try:
+            if os.path.exists(qss_path):
+                with open(qss_path, encoding="utf-8") as f:
+                    self.setStyleSheet(f.read())
+            else:
+                # 回退到简约样式
+                self.apply_simple_style()
+        except Exception as e:
+            print(f"加载主题失败: {e}")
+            # 回退到简约样式
+            self.apply_simple_style()
 
     def apply_appearance_settings(self):
         """应用外观设置（字体、颜色等）"""

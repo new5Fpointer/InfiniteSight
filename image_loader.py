@@ -35,7 +35,7 @@ class ImageLoader(QObject):
         try:
             # 1) 大图检测 - 使用缩略图优化加载
             if is_very_large(self.file_path):
-                pixmap = load_thumbnail(self.file_path, max_edge=4096)
+                if is_very_large(self.file_path):
                 if pixmap.isNull():
                     raise Exception("Thumbnail generation failed")
             else:
