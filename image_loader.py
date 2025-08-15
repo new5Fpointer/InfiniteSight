@@ -36,8 +36,8 @@ class ImageLoader(QObject):
             # 1) 大图检测 - 使用缩略图优化加载
             if is_very_large(self.file_path):
                 if is_very_large(self.file_path):
-                if pixmap.isNull():
-                    raise Exception("Thumbnail generation failed")
+                    if pixmap.isNull():
+                        raise Exception("Thumbnail generation failed")
             else:
                 # 2) 小图正常加载
                 pixmap = QPixmap(self.file_path)
