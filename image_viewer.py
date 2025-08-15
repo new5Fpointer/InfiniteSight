@@ -14,6 +14,7 @@ class ImageViewer(QMainWindow):
         self.setWindowTitle("InfiniteSight - Modern Image Viewer")
         self.setGeometry(100, 100, 1400, 900)
         self.current_image_path = None
+        self.setAcceptDrops(True)
         
         # 初始化设置管理器
         self.settings_manager = SettingsManager()
@@ -549,3 +550,21 @@ class ImageViewer(QMainWindow):
         # 更新菜单勾选状态
         self.dark_action.setChecked(theme_name == "dark")
         self.light_action.setChecked(theme_name == "light")
+
+    # ----------------------------  拖放支持  ----------------------------
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        for path in files:
+            if os.path.isfile(path):
+                ext = os.path.splitext(path)[1].lower()
+                if ext in {'.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff', '.webp'}:
+                    self.open_recent_file(path)   # 复用现有加载逻辑
+                    break   # 只取第一张
+                else:
+                    self.statusBar().showMessage("Unsupported file format", 3000)
