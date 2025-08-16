@@ -1,12 +1,45 @@
 import os
 from PyQt6.QtWidgets import (QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget, 
                              QScrollArea, QMenuBar, QDockWidget, QSplitter, QTreeWidget,
-                             QTreeWidgetItem, QHeaderView, QProgressBar, QApplication, QDialog)
-from PyQt6.QtGui import QFont, QMovie, QAction, QActionGroup
+                             QTreeWidgetItem, QHeaderView, QProgressBar, QApplication, 
+                             QDialog, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem)
+from PyQt6.QtGui import QFont, QMovie, QAction, QActionGroup, QWheelEvent
 from PyQt6.QtCore import Qt, QThread, QSize
 from settings import SettingsManager, SettingsDialog
 from image_loader import ImageLoader
 from language_manager import LanguageManager
+from PyQt6 import QtGui
+
+class ZoomableGraphicsView(QGraphicsView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    def wheelEvent(self, event: QWheelEvent):
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            zoom_in_factor = 1.15
+            zoom_out_factor = 1 / zoom_in_factor
+
+            if event.angleDelta().y() > 0:
+                scale_factor = zoom_in_factor
+            else:
+                scale_factor = zoom_out_factor
+
+            mouse_pos = event.position()
+            scene_pos = self.mapToScene(mouse_pos.toPoint())
+
+            self.scale(scale_factor, scale_factor)
+
+            new_scene_pos = self.mapToScene(mouse_pos.toPoint())
+            delta = new_scene_pos - scene_pos
+            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
+            self.translate(delta.x(), delta.y())
+
+            event.accept()
+        else:
+            super().wheelEvent(event)
 
 class ImageViewer(QMainWindow):
     def __init__(self):
@@ -15,6 +48,8 @@ class ImageViewer(QMainWindow):
         self.setGeometry(100, 100, 1400, 900)
         self.current_image_path = None
         self.setAcceptDrops(True)
+        self.pixmap_item = None
+        self.scale_factor = 1.0
         
         # 初始化设置管理器
         self.settings_manager = SettingsManager()
@@ -39,9 +74,13 @@ class ImageViewer(QMainWindow):
         self.image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # 图片标签
-        self.image_label = QLabel()
-        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_layout.addWidget(self.image_label)
+        self.graphics_view = ZoomableGraphicsView()
+        self.graphics_scene = QGraphicsScene()
+        self.graphics_view.setScene(self.graphics_scene)
+        self.graphics_view.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.graphics_view.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+        self.graphics_view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)  # 支持拖动
+        self.image_layout.addWidget(self.graphics_view)
         
         # 加载指示器
         self.loading_label = QLabel()
@@ -79,7 +118,7 @@ class ImageViewer(QMainWindow):
         self.info_dock.setWidget(self.info_tree)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.info_dock)
         
-        self.splitter.addWidget(self.image_scroll)
+        self.splitter.addWidget(self.graphics_view)
         self.splitter.addWidget(self.info_dock)
         self.splitter.setSizes([1000, 200])
         self.info_dock.setMinimumWidth(150)
@@ -371,7 +410,7 @@ class ImageViewer(QMainWindow):
             self.current_image_path = file_path
             self.statusBar().showMessage(
                 self.tr("status_loading", file=os.path.basename(file_path)))
-            self.image_label.clear()
+            self.graphics_scene.clear()
             self.loading_label.setVisible(True)
             self.loading_movie.start()
             self.progress_bar.setVisible(True)
@@ -406,7 +445,7 @@ class ImageViewer(QMainWindow):
             self, 
             "Open Image", 
             "", 
-            "Images (*.png *.jpg *.jpeg *.bmp *.gif *.tiff *.webp)"
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif *.tiff *.tif *.webp)"
         )
         if file_path:
             # 添加到最近文件
@@ -420,7 +459,7 @@ class ImageViewer(QMainWindow):
             # 显示加载状态
             self.current_image_path = file_path
             self.statusBar().showMessage(f"Loading: {os.path.basename(file_path)}...")
-            self.image_label.clear()
+            self.graphics_scene.clear()
             self.loading_label.setVisible(True)
             self.loading_movie.start()
             self.progress_bar.setVisible(True)
@@ -448,43 +487,28 @@ class ImageViewer(QMainWindow):
         self.loader_thread.start()
 
     def on_image_loaded(self, pixmap, file_path):
-        """图片加载完成时的处理"""
-        # 确保加载的是当前请求的图片
         if file_path != self.current_image_path:
             return
-            
+
         if pixmap is None:
             self.statusBar().showMessage(self.tr("error_load_image"))
-            self.image_label.setText(self.tr("error_failed_load"))
             return
-        
-        # 根据性能设置选择渲染模式
-        if self.settings["performance"]["quick_render"]:
-            # 快速渲染模式 - 降低质量但更快
-            scaled_pixmap = pixmap.scaled(
-                self.image_scroll.width() - 50,
-                self.image_scroll.height() - 50,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.FastTransformation
-            )
-        else:
-            # 高质量渲染模式
-            scaled_pixmap = pixmap.scaled(
-                self.image_scroll.width() - 50,
-                self.image_scroll.height() - 50,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
-            )
-            
-        self.image_label.setPixmap(scaled_pixmap)
-        
-        # 隐藏加载指示器
+
+        # 清空旧图像
+        self.graphics_scene.clear()
+        self.pixmap_item = QGraphicsPixmapItem(pixmap)
+        self.graphics_scene.addItem(self.pixmap_item)
+
+        # 自适应窗口大小
+        self.graphics_view.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+        self.scale_factor = 1.0  # 重置缩放比例
+
+        # 隐藏加载动画
         self.loading_label.setVisible(False)
         self.loading_movie.stop()
         self.progress_bar.setVisible(False)
-        
         self.statusBar().showMessage(f"Loaded: {os.path.basename(file_path)}")
-        
+
         # 清理线程
         if self.loader_thread:
             self.loader_thread.quit()
