@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtGui import QPixmap
-from image_cache import is_very_large
+from image_cache import is_very_large, load_thumbnail
 
 class ImageLoader(QObject):
     """
@@ -35,6 +35,7 @@ class ImageLoader(QObject):
         try:
             # 1) 大图检测 - 使用缩略图优化加载
             if is_very_large(self.file_path):
+                pixmap = load_thumbnail(self.file_path, max_edge=4096)
                 if is_very_large(self.file_path):
                     if pixmap.isNull():
                         raise Exception("Thumbnail generation failed")
