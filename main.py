@@ -3,7 +3,6 @@ import sys
 os.environ['PATH'] += os.pathsep + os.path.abspath('vips/bin')
 from PyQt6.QtWidgets import QApplication
 from image_viewer import ImageViewer
-from language_manager import LanguageManager
 
 os.environ["QT_IMAGEIO_MAXALLOC"] = "4096"
 
