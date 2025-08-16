@@ -274,18 +274,6 @@ class ImageViewer(QMainWindow):
             # 回退到简约样式
             self.apply_simple_style()
 
-    def apply_appearance_settings(self):
-        """应用外观设置（字体、颜色等）"""
-        # 获取设置
-        font_family = self.settings["appearance"]["ui_font"]
-        font_size = self.settings["appearance"]["ui_font_size"]
-        
-        # 更新状态栏和菜单栏字体
-        app_font = QFont(font_family, font_size)
-        QApplication.instance().setFont(app_font)
-        self.statusBar().setFont(app_font)
-        self.menuBar().setFont(app_font)
-
     def _create_menu(self):
         """创建菜单系统"""
         menu_bar = QMenuBar(self)
