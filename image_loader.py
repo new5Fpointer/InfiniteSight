@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtGui import QPixmap
-from image_cache import is_very_large, load_thumbnail
+from image_cache import is_very_large
 
 class ImageLoader(QObject):
     """

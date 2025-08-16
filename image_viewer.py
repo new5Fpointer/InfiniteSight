@@ -2,7 +2,7 @@ import os
 from PyQt6.QtWidgets import (QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget, 
                              QScrollArea, QMenuBar, QDockWidget, QSplitter, QTreeWidget,
                              QTreeWidgetItem, QHeaderView, QProgressBar, QApplication, QDialog)
-from PyQt6.QtGui import QFont, QMovie, QColor, QAction, QActionGroup
+from PyQt6.QtGui import QFont, QMovie, QAction, QActionGroup
 from PyQt6.QtCore import Qt, QThread, QSize
 from settings import SettingsManager, SettingsDialog
 from image_loader import ImageLoader
