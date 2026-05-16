@@ -15,7 +15,7 @@
 #include <QMovie>
 #include <QScrollBar>
 #include <QSplitter>
-#include <QStatusBar>
+#include <QDebug>
 #include <QTransform>
 #include <QUrl>
 #include <QUuid>
@@ -225,11 +225,7 @@ void MainWindow::setupUi() {
     mainLayout->addWidget(m_splitter);
     setCentralWidget(mainWidget);
 
-    m_roamLabel->setObjectName("roam_label");
-    statusBar()->addPermanentWidget(m_roamLabel);
-    m_roamLabel->setVisible(false);
-
-    statusBar()->showMessage(tr("Ready"));
+    qDebug().noquote() << "Ready";
 }
 
 void MainWindow::createTitleBar() {
@@ -306,7 +302,7 @@ void MainWindow::createBottomBar() {
     connect(m_copyBtn, &QPushButton::clicked, this, [this]() {
         if (m_pixmapItem && !m_pixmapItem->pixmap().isNull()) {
             QApplication::clipboard()->setPixmap(m_pixmapItem->pixmap());
-            statusBar()->showMessage(tr("Image copied to clipboard"), 2000);
+            qDebug().noquote() << tr("Image copied to clipboard");
         }
     });
     bottomLayout->addWidget(m_copyBtn);
@@ -317,7 +313,7 @@ void MainWindow::createBottomBar() {
         if (!m_currentImagePath.isEmpty()) {
             QFile file(m_currentImagePath);
             if (file.remove()) {
-                statusBar()->showMessage(tr("Image deleted"), 2000);
+                qDebug().noquote() << tr("Image deleted");
                 initFolderRoaming(QFileInfo(m_currentImagePath).absolutePath());
                 if (!m_currentFolderImages.isEmpty()) {
                     startImageLoading(m_currentFolderImages[qBound(0, m_currentFolderIndex, m_currentFolderImages.size() - 1)]);
@@ -332,9 +328,9 @@ void MainWindow::createBottomBar() {
     });
     bottomLayout->addWidget(m_deleteBtn);
 
-    statusBar()->addPermanentWidget(m_bottomBar);
-    statusBar()->setFixedHeight(40);
-    statusBar()->setSizeGripEnabled(false);
+    if (auto *lay = centralWidget()->layout()) {
+        lay->addWidget(m_bottomBar);
+    }
 }
 
 void MainWindow::createMenus() {
@@ -492,7 +488,7 @@ void MainWindow::openRecentFile() {
         resetCanvas();
         startImageLoading(filePath);
     } else {
-        statusBar()->showMessage(tr("File not found: %1").arg(filePath), 3000);
+        qDebug().noquote() << tr("File not found: %1").arg(filePath);
     }
 }
 
@@ -513,7 +509,7 @@ void MainWindow::openSettings() {
     SettingsWindow dialog(m_settingsManager, this);
     connect(&dialog, &SettingsWindow::settingsApplied, this, &MainWindow::applySettings);
     if (dialog.exec() == QDialog::Accepted) {
-        statusBar()->showMessage(tr("Settings applied successfully"));
+        qDebug().noquote() << tr("Settings applied successfully");
     }
 }
 
@@ -608,7 +604,7 @@ void MainWindow::startImageLoading(const QString &filePath) {
 
     stopCurrentLoading();
 
-    statusBar()->showMessage(tr("Loading: %1...").arg(QFileInfo(filePath).fileName()));
+    qDebug().noquote() << tr("Loading: %1...").arg(QFileInfo(filePath).fileName());
     m_graphicsScene->clear();
     m_loadingLabel->setVisible(true);
     m_progressBar->setVisible(true);
@@ -632,7 +628,7 @@ void MainWindow::onImageLoaded(const QPixmap &pixmap, const QString &filePath, c
     if (jobId != m_currentJobId)
         return;
     if (pixmap.isNull()) {
-        statusBar()->showMessage(tr("Error loading image"));
+        qDebug().noquote() << tr("Error loading image");
         return;
     }
 
@@ -652,7 +648,7 @@ void MainWindow::onImageLoaded(const QPixmap &pixmap, const QString &filePath, c
 
     m_loadingLabel->setVisible(false);
     m_progressBar->setVisible(false);
-    statusBar()->showMessage(tr("Loaded: %1").arg(QFileInfo(filePath).fileName()));
+    qDebug().noquote() << tr("Loaded: %1").arg(QFileInfo(filePath).fileName());
 
     stopCurrentLoading();
     initFolderRoaming(filePath);
@@ -707,7 +703,6 @@ void MainWindow::applySettings() {
 
     QFont appFont(a.uiFont, a.uiFontSize);
     QApplication::setFont(appFont);
-    statusBar()->setFont(appFont);
     menuBar()->setFont(appFont);
 
     applyStyleSheet();
@@ -767,9 +762,7 @@ void MainWindow::applyStyleSheet() {
                         "#pageLabel { color: %15; font-size: 12px; }"
                         "#bottomBtn { background-color: transparent; border: none; border-radius: 4px; }"
                         "#bottomBtn:hover { background-color: %16; }"
-                        "QGraphicsView { background-color: %19; border: none; }"
-                        "QStatusBar { background-color: %18; border: none; }"
-                        "QStatusBar::item { border: none; }")
+                        "QGraphicsView { background-color: %19; border: none; }")
                         .arg(bg, text, a.uiFont)
                         .arg(a.uiFontSize)
                         .arg(titleBarBg, menuText, border, selected, accent, progressBg, scrollBg, scrollHandle, scrollHandleHover)
@@ -986,15 +979,13 @@ void MainWindow::initFolderRoaming(const QString &imagePath) {
 
 void MainWindow::updateRoamStatus() {
     if (m_currentFolderImages.isEmpty() || m_currentFolderIndex < 0) {
-        m_roamLabel->setVisible(false);
         return;
     }
 
     QString folder = QFileInfo(m_currentImagePath).dir().dirName();
     int curr = m_currentFolderIndex + 1;
     int total = m_currentFolderImages.size();
-    m_roamLabel->setText(tr("Image %1 of %2 in %3").arg(curr).arg(total).arg(folder));
-    m_roamLabel->setVisible(true);
+    qDebug().noquote() << tr("Image %1 of %2 in %3").arg(curr).arg(total).arg(folder);
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
