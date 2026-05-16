@@ -3,9 +3,16 @@
         <file>icons/dark/actual-size.svg</file>
         <file>icons/dark/chevron-left.svg</file>
         <file>icons/dark/chevron-right.svg</file>
+        <file>icons/dark/close.svg</file>
+        <file>icons/dark/copy.svg</file>
+        <file>icons/dark/delete.svg</file>
         <file>icons/dark/fit-screen.svg</file>
         <file>icons/dark/folder-open.svg</file>
+        <file>icons/dark/maximize.svg</file>
+        <file>icons/dark/menu.svg</file>
+        <file>icons/dark/minimize.svg</file>
         <file>icons/dark/mirror-horizontal.svg</file>
+        <file>icons/dark/pin.svg</file>
         <file>icons/dark/rotate-left.svg</file>
         <file>icons/dark/rotate-right.svg</file>
         <file>icons/dark/zoom-in.svg</file>
@@ -13,9 +20,16 @@
         <file>icons/light/actual-size.svg</file>
         <file>icons/light/chevron-left.svg</file>
         <file>icons/light/chevron-right.svg</file>
+        <file>icons/light/close.svg</file>
+        <file>icons/light/copy.svg</file>
+        <file>icons/light/delete.svg</file>
         <file>icons/light/fit-screen.svg</file>
         <file>icons/light/folder-open.svg</file>
+        <file>icons/light/maximize.svg</file>
+        <file>icons/light/menu.svg</file>
+        <file>icons/light/minimize.svg</file>
         <file>icons/light/mirror-horizontal.svg</file>
+        <file>icons/light/pin.svg</file>
         <file>icons/light/rotate-left.svg</file>
         <file>icons/light/rotate-right.svg</file>
         <file>icons/light/zoom-in.svg</file>

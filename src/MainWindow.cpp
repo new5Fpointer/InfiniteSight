@@ -3,6 +3,7 @@
 #include "SettingsWindow.h"
 #include <QActionGroup>
 #include <QApplication>
+#include <QClipboard>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -13,8 +14,8 @@
 #include <QMimeData>
 #include <QMovie>
 #include <QScrollBar>
-#include <QStatusBar>
 #include <QSplitter>
+#include <QStatusBar>
 #include <QTransform>
 #include <QUrl>
 #include <QUuid>
@@ -90,14 +91,22 @@ void ZoomableGraphicsView::dropEvent(QDropEvent *event) {
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), m_settingsManager(new SettingsManager(this)), m_graphicsView(new ZoomableGraphicsView(this)), m_graphicsScene(new QGraphicsScene(this)), m_pixmapItem(nullptr), m_progressBar(new QProgressBar(this)), m_loadingLabel(new QLabel(this)), m_roamLabel(new QLabel(this)), m_loaderThread(nullptr), m_imageLoader(nullptr), m_scaleFactor(1.0), m_currentFolderIndex(-1) {
+    : QMainWindow(parent), m_settingsManager(new SettingsManager(this)), m_graphicsView(new ZoomableGraphicsView(this)),
+      m_graphicsScene(new QGraphicsScene(this)), m_pixmapItem(nullptr), m_progressBar(new QProgressBar(this)),
+      m_loadingLabel(new QLabel(this)), m_roamLabel(new QLabel(this)), m_loaderThread(nullptr), m_imageLoader(nullptr),
+      m_scaleFactor(1.0), m_currentFolderIndex(-1), m_imageWidth(0), m_imageHeight(0), m_fileSize(0), m_dragging(false) {
     setWindowTitle(tr("InfiniteSight - Modern Image Viewer"));
     setGeometry(100, 100, 1400, 900);
     setAcceptDrops(true);
 
+    setWindowFlags(Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_TranslucentBackground, false);
+
     setupUi();
     createMenus();
     createToolBar();
+    createTitleBar();
+    createBottomBar();
     applySettings();
 }
 
@@ -109,6 +118,69 @@ void MainWindow::setupUi() {
     QWidget *mainWidget = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(mainWidget);
     mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
+
+    m_titleBar = new QWidget(this);
+    m_titleBar->setObjectName("titleBar");
+    m_titleBar->setFixedHeight(36);
+
+    QHBoxLayout *titleLayout = new QHBoxLayout(m_titleBar);
+    titleLayout->setContentsMargins(10, 0, 0, 0);
+    titleLayout->setSpacing(0);
+
+    m_titleIcon = new QLabel(this);
+    m_titleIcon->setFixedSize(20, 20);
+    titleLayout->addWidget(m_titleIcon);
+
+    m_titleLabel = new QLabel(tr("InfiniteSight"), this);
+    m_titleLabel->setObjectName("titleLabel");
+    titleLayout->addWidget(m_titleLabel);
+    titleLayout->addStretch();
+
+    auto createTitleBtn = [this](const QString &iconName, const QString &objName = "titleBtn") -> QPushButton * {
+        QPushButton *btn = new QPushButton(this);
+        btn->setFixedSize(46, 36);
+        btn->setIconSize(QSize(14, 14));
+        btn->setObjectName(objName);
+        btn->setFlat(true);
+        btn->setCursor(Qt::PointingHandCursor);
+        return btn;
+    };
+
+    m_menuBtn = createTitleBtn("menu");
+    connect(m_menuBtn, &QPushButton::clicked, this, [this]() {
+        QPoint pos = m_menuBtn->mapToGlobal(QPoint(0, m_menuBtn->height()));
+        m_fileMenu->exec(pos);
+    });
+    titleLayout->addWidget(m_menuBtn);
+
+    m_pinBtn = createTitleBtn("pin");
+    connect(m_pinBtn, &QPushButton::clicked, this, [this]() {
+        Qt::WindowFlags flags = windowFlags();
+        if (flags & Qt::WindowStaysOnTopHint) {
+            setWindowFlags(flags & ~Qt::WindowStaysOnTopHint);
+            m_pinBtn->setStyleSheet("");
+        } else {
+            setWindowFlags(flags | Qt::WindowStaysOnTopHint);
+            m_pinBtn->setStyleSheet("background-color: #3F3F46;");
+        }
+        show();
+    });
+    titleLayout->addWidget(m_pinBtn);
+
+    m_minBtn = createTitleBtn("minimize");
+    connect(m_minBtn, &QPushButton::clicked, this, &MainWindow::onMinimize);
+    titleLayout->addWidget(m_minBtn);
+
+    m_maxBtn = createTitleBtn("maximize");
+    connect(m_maxBtn, &QPushButton::clicked, this, &MainWindow::onMaximize);
+    titleLayout->addWidget(m_maxBtn);
+
+    m_closeBtn = createTitleBtn("close", "closeBtn");
+    connect(m_closeBtn, &QPushButton::clicked, this, &MainWindow::onClose);
+    titleLayout->addWidget(m_closeBtn);
+
+    mainLayout->addWidget(m_titleBar);
 
     m_splitter = new QSplitter(Qt::Horizontal, this);
 
@@ -120,6 +192,7 @@ void MainWindow::setupUi() {
     QWidget *imageContainer = new QWidget(this);
     QVBoxLayout *imageLayout = new QVBoxLayout(imageContainer);
     imageLayout->setAlignment(Qt::AlignCenter);
+    imageLayout->setContentsMargins(0, 0, 0, 0);
     imageLayout->addWidget(m_graphicsView);
 
     m_loadingLabel->setAlignment(Qt::AlignCenter);
@@ -158,8 +231,114 @@ void MainWindow::setupUi() {
     statusBar()->showMessage(tr("Ready"));
 }
 
+void MainWindow::createTitleBar() {
+}
+
+void MainWindow::createBottomBar() {
+    m_bottomBar = new QWidget(this);
+    m_bottomBar->setObjectName("bottomBar");
+    m_bottomBar->setFixedHeight(40);
+
+    QHBoxLayout *bottomLayout = new QHBoxLayout(m_bottomBar);
+    bottomLayout->setContentsMargins(12, 0, 12, 0);
+    bottomLayout->setSpacing(6);
+
+    m_fileInfoLabel = new QLabel(this);
+    m_fileInfoLabel->setObjectName("fileInfoLabel");
+    bottomLayout->addWidget(m_fileInfoLabel);
+
+    bottomLayout->addStretch();
+
+    auto createBottomBtn = [this](const QString &iconName, int w = 32) -> QPushButton * {
+        QPushButton *btn = new QPushButton(this);
+        btn->setFixedSize(w, 28);
+        if (!iconName.isEmpty()) {
+            btn->setIcon(themedIcon(iconName));
+            btn->setIconSize(QSize(16, 16));
+        }
+        btn->setObjectName("bottomBtn");
+        btn->setFlat(true);
+        btn->setCursor(Qt::PointingHandCursor);
+        return btn;
+    };
+
+    m_prevBtn = createBottomBtn("chevron-left");
+    connect(m_prevBtn, &QPushButton::clicked, this, [this]() { navigateFolderImage(-1); });
+    bottomLayout->addWidget(m_prevBtn);
+
+    m_pageLabel = new QLabel("0 / 0", this);
+    m_pageLabel->setObjectName("pageLabel");
+    m_pageLabel->setAlignment(Qt::AlignCenter);
+    m_pageLabel->setFixedWidth(60);
+    bottomLayout->addWidget(m_pageLabel);
+
+    m_nextBtn = createBottomBtn("chevron-right");
+    connect(m_nextBtn, &QPushButton::clicked, this, [this]() { navigateFolderImage(1); });
+    bottomLayout->addWidget(m_nextBtn);
+
+    bottomLayout->addSpacing(16);
+
+    m_fitBtn = createBottomBtn("fit-screen");
+    m_fitBtn->setToolTip(tr("Fit to Window"));
+    connect(m_fitBtn, &QPushButton::clicked, this, &MainWindow::fitToWindow);
+    bottomLayout->addWidget(m_fitBtn);
+
+    m_zoomCombo = createBottomBtn("", 56);
+    m_zoomCombo->setText("100%");
+    connect(m_zoomCombo, &QPushButton::clicked, this, &MainWindow::actualSize);
+    bottomLayout->addWidget(m_zoomCombo);
+
+    m_zoomOutBtn = createBottomBtn("zoom-out");
+    m_zoomOutBtn->setToolTip(tr("Zoom Out"));
+    connect(m_zoomOutBtn, &QPushButton::clicked, this, &MainWindow::zoomOut);
+    bottomLayout->addWidget(m_zoomOutBtn);
+
+    m_zoomInBtn = createBottomBtn("zoom-in");
+    m_zoomInBtn->setToolTip(tr("Zoom In"));
+    connect(m_zoomInBtn, &QPushButton::clicked, this, &MainWindow::zoomIn);
+    bottomLayout->addWidget(m_zoomInBtn);
+
+    bottomLayout->addSpacing(16);
+
+    m_copyBtn = createBottomBtn("copy");
+    m_copyBtn->setToolTip(tr("Copy Image"));
+    connect(m_copyBtn, &QPushButton::clicked, this, [this]() {
+        if (m_pixmapItem && !m_pixmapItem->pixmap().isNull()) {
+            QApplication::clipboard()->setPixmap(m_pixmapItem->pixmap());
+            statusBar()->showMessage(tr("Image copied to clipboard"), 2000);
+        }
+    });
+    bottomLayout->addWidget(m_copyBtn);
+
+    m_deleteBtn = createBottomBtn("delete");
+    m_deleteBtn->setToolTip(tr("Delete Image"));
+    connect(m_deleteBtn, &QPushButton::clicked, this, [this]() {
+        if (!m_currentImagePath.isEmpty()) {
+            QFile file(m_currentImagePath);
+            if (file.remove()) {
+                statusBar()->showMessage(tr("Image deleted"), 2000);
+                initFolderRoaming(QFileInfo(m_currentImagePath).absolutePath());
+                if (!m_currentFolderImages.isEmpty()) {
+                    startImageLoading(m_currentFolderImages[qBound(0, m_currentFolderIndex, m_currentFolderImages.size() - 1)]);
+                } else {
+                    m_graphicsScene->clear();
+                    m_pixmapItem = nullptr;
+                    updateTitleBarTitle();
+                    updateBottomBarInfo();
+                }
+            }
+        }
+    });
+    bottomLayout->addWidget(m_deleteBtn);
+
+    statusBar()->addPermanentWidget(m_bottomBar);
+    statusBar()->setFixedHeight(40);
+    statusBar()->setSizeGripEnabled(false);
+}
+
 void MainWindow::createMenus() {
     QMenuBar *menuBar = new QMenuBar(this);
+    menuBar->setVisible(false);
 
     m_fileMenu = menuBar->addMenu(tr("&File"));
 
@@ -362,6 +541,7 @@ void MainWindow::zoomIn() {
     if (m_pixmapItem) {
         m_scaleFactor *= 1.2;
         m_graphicsView->scale(1.2, 1.2);
+        updateBottomBarInfo();
     }
 }
 
@@ -369,6 +549,7 @@ void MainWindow::zoomOut() {
     if (m_pixmapItem) {
         m_scaleFactor *= 0.8;
         m_graphicsView->scale(0.8, 0.8);
+        updateBottomBarInfo();
     }
 }
 
@@ -376,12 +557,14 @@ void MainWindow::actualSize() {
     if (m_pixmapItem) {
         m_graphicsView->resetTransform();
         m_scaleFactor = 1.0;
+        updateBottomBarInfo();
     }
 }
 
 void MainWindow::fitToWindow() {
     if (m_pixmapItem) {
         m_graphicsView->fitInView(m_pixmapItem, Qt::KeepAspectRatio);
+        updateBottomBarInfo();
     }
 }
 
@@ -475,6 +658,10 @@ void MainWindow::onImageLoaded(const QPixmap &pixmap, const QString &filePath, c
     m_graphicsView->horizontalScrollBar()->setValue(0);
     m_graphicsView->verticalScrollBar()->setValue(0);
 
+    m_imageWidth = pixmap.width();
+    m_imageHeight = pixmap.height();
+    m_fileSize = QFileInfo(filePath).size();
+
     m_loadingLabel->setVisible(false);
     m_progressBar->setVisible(false);
     statusBar()->showMessage(tr("Loaded: %1").arg(QFileInfo(filePath).fileName()));
@@ -482,6 +669,8 @@ void MainWindow::onImageLoaded(const QPixmap &pixmap, const QString &filePath, c
     stopCurrentLoading();
     initFolderRoaming(filePath);
     updateRoamStatus();
+    updateTitleBarTitle();
+    updateBottomBarInfo();
 }
 
 void MainWindow::onInfoReady(const ImageInfo &info, const QString &jobId) {
@@ -553,29 +742,50 @@ void MainWindow::applyStyleSheet() {
     QString scrollBg = theme == "dark" ? "#404040" : "#F0F0F0";
     QString scrollHandle = theme == "dark" ? "#606060" : "#C0C0C0";
     QString scrollHandleHover = theme == "dark" ? "#808080" : "#A0A0A0";
+    QString titleBarBg = theme == "dark" ? "#2D2D30" : "#F3F3F3";
+    QString titleBarText = theme == "dark" ? "#E0E0E0" : "#000000";
+    QString bottomBarBg = theme == "dark" ? "#252526" : "#F0F0F0";
+    QString btnHover = theme == "dark" ? "#3F3F46" : "#E5E5E5";
+    QString closeHover = "#E81123";
+    QString viewBg = theme == "dark" ? "#1E1E1E" : "#FFFFFF";
 
     QString style = QString(
                         "QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {"
                         "  background-color: %1; color: %2; font-family: '%3'; font-size: %4pt; }"
-                        "QMenuBar { background-color: %1; color: %5; border-bottom: 1px solid %6; }"
-                        "QMenuBar::item:selected { background-color: %7; }"
-                        "QTreeWidget::item:selected { background-color: %8; color: #FFFFFF; }"
-                        "QProgressBar { border: 1px solid %6; border-radius: 3px; text-align: center;"
-                        "  background-color: %9; color: %2; }"
-                        "QProgressBar::chunk { background-color: %8; }"
-                        "QScrollBar:vertical { border: none; background: %10; width: 12px; margin: 0px; }"
-                        "QScrollBar::handle:vertical { background: %11; border-radius: 6px; min-height: 30px; }"
-                        "QScrollBar::handle:vertical:hover { background: %12; }"
+                        "QMenuBar { background-color: %5; color: %6; border-bottom: 1px solid %7; }"
+                        "QMenuBar::item:selected { background-color: %8; }"
+                        "QTreeWidget::item:selected { background-color: %9; color: #FFFFFF; }"
+                        "QProgressBar { border: 1px solid %7; border-radius: 3px; text-align: center;"
+                        "  background-color: %10; color: %2; }"
+                        "QProgressBar::chunk { background-color: %9; }"
+                        "QScrollBar:vertical { border: none; background: %11; width: 12px; margin: 0px; }"
+                        "QScrollBar::handle:vertical { background: %12; border-radius: 6px; min-height: 30px; }"
+                        "QScrollBar::handle:vertical:hover { background: %13; }"
                         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { border: none; background: none; height: 0px; }"
-                        "QScrollBar:horizontal { border: none; background: %10; height: 12px; margin: 0px; }"
-                        "QScrollBar::handle:horizontal { background: %11; border-radius: 6px; min-width: 30px; }"
-                        "QScrollBar::handle:horizontal:hover { background: %12; }"
+                        "QScrollBar:horizontal { border: none; background: %11; height: 12px; margin: 0px; }"
+                        "QScrollBar::handle:horizontal { background: %12; border-radius: 6px; min-width: 30px; }"
+                        "QScrollBar::handle:horizontal:hover { background: %13; }"
                         "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { border: none; background: none; width: 0px; }"
                         "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,"
-                        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: none; }")
+                        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: none; }"
+                        "#titleBar { background-color: %14; border-bottom: 1px solid %7; }"
+                        "#titleLabel { color: %15; font-size: 13px; padding-left: 6px; }"
+                        "#titleBtn { background-color: transparent; border: none; border-radius: 0px; }"
+                        "#titleBtn:hover { background-color: %16; }"
+                        "#closeBtn { background-color: transparent; border: none; border-radius: 0px; }"
+                        "#closeBtn:hover { background-color: %17; }"
+                        "#bottomBar { background-color: %18; border-top: 1px solid %7; }"
+                        "#fileInfoLabel { color: %15; font-size: 12px; padding: 0 8px; }"
+                        "#pageLabel { color: %15; font-size: 12px; }"
+                        "#bottomBtn { background-color: transparent; border: none; border-radius: 4px; }"
+                        "#bottomBtn:hover { background-color: %16; }"
+                        "QGraphicsView { background-color: %19; border: none; }"
+                        "QStatusBar { background-color: %18; border: none; }"
+                        "QStatusBar::item { border: none; }")
                         .arg(bg, text, a.uiFont)
                         .arg(a.uiFontSize)
-                        .arg(menuText, border, selected, accent, progressBg, scrollBg, scrollHandle, scrollHandleHover);
+                        .arg(titleBarBg, menuText, border, selected, accent, progressBg, scrollBg, scrollHandle, scrollHandleHover)
+                        .arg(titleBarBg, titleBarText, btnHover, closeHover, bottomBarBg, viewBg);
 
     setStyleSheet(style);
 }
@@ -587,6 +797,7 @@ QIcon MainWindow::themedIcon(const QString &name) {
 }
 
 void MainWindow::refreshToolBarIcons() {
+    QString theme = m_settingsManager->appearance().theme;
     m_zoomInAction->setIcon(themedIcon("zoom-in"));
     m_zoomOutAction->setIcon(themedIcon("zoom-out"));
     m_actualSizeAction->setIcon(themedIcon("actual-size"));
@@ -596,6 +807,136 @@ void MainWindow::refreshToolBarIcons() {
     m_mirrorAction->setIcon(themedIcon("mirror-horizontal"));
     m_prevImageAction->setIcon(themedIcon("chevron-left"));
     m_nextImageAction->setIcon(themedIcon("chevron-right"));
+    if (m_titleIcon) {
+        QPixmap iconPix = QPixmap(QString(":/icons/%1/folder-open.svg").arg(theme)).scaled(16, 16, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        m_titleIcon->setPixmap(iconPix);
+    }
+    if (m_menuBtn)
+        m_menuBtn->setIcon(themedIcon("menu"));
+    if (m_pinBtn)
+        m_pinBtn->setIcon(themedIcon("pin"));
+    if (m_minBtn)
+        m_minBtn->setIcon(themedIcon("minimize"));
+    if (m_maxBtn)
+        m_maxBtn->setIcon(themedIcon("maximize"));
+    if (m_closeBtn)
+        m_closeBtn->setIcon(themedIcon("close"));
+
+    if (m_prevBtn)
+        m_prevBtn->setIcon(themedIcon("chevron-left"));
+    if (m_nextBtn)
+        m_nextBtn->setIcon(themedIcon("chevron-right"));
+    if (m_fitBtn)
+        m_fitBtn->setIcon(themedIcon("fit-screen"));
+    if (m_zoomOutBtn)
+        m_zoomOutBtn->setIcon(themedIcon("zoom-out"));
+    if (m_zoomInBtn)
+        m_zoomInBtn->setIcon(themedIcon("zoom-in"));
+    if (m_copyBtn)
+        m_copyBtn->setIcon(themedIcon("copy"));
+    if (m_deleteBtn)
+        m_deleteBtn->setIcon(themedIcon("delete"));
+}
+
+void MainWindow::updateTitleBarTitle() {
+    if (m_currentImagePath.isEmpty()) {
+        m_titleLabel->setText(tr("InfiniteSight"));
+    } else {
+        m_titleLabel->setText(QFileInfo(m_currentImagePath).fileName());
+    }
+}
+
+void MainWindow::updateBottomBarInfo() {
+    if (m_currentImagePath.isEmpty()) {
+        m_fileInfoLabel->setText("");
+        m_pageLabel->setText("0 / 0");
+        m_zoomCombo->setText("100%");
+        return;
+    }
+
+    QFileInfo fi(m_currentImagePath);
+    QString ext = fi.suffix().toUpper();
+    QString sizeStr;
+    if (m_fileSize < 1024) {
+        sizeStr = QString("%1B").arg(m_fileSize);
+    } else if (m_fileSize < 1024 * 1024) {
+        sizeStr = QString("%1K").arg(m_fileSize / 1024.0, 0, 'f', 1);
+    } else {
+        sizeStr = QString("%1M").arg(m_fileSize / (1024.0 * 1024.0), 0, 'f', 2);
+    }
+
+    m_fileInfoLabel->setText(QString("%1   %2x%3   %4").arg(sizeStr).arg(m_imageWidth).arg(m_imageHeight).arg(ext));
+
+    int curr = m_currentFolderIndex >= 0 ? m_currentFolderIndex + 1 : 1;
+    int total = m_currentFolderImages.isEmpty() ? 1 : m_currentFolderImages.size();
+    m_pageLabel->setText(QString("%1/%2").arg(curr).arg(total));
+
+    int zoomPercent = qRound(m_scaleFactor * 100);
+    m_zoomCombo->setText(QString("%1%").arg(zoomPercent));
+}
+
+void MainWindow::onMinimize() {
+    showMinimized();
+}
+
+void MainWindow::onMaximize() {
+    if (isMaximized()) {
+        showNormal();
+    } else {
+        showMaximized();
+    }
+    updateMaximizeIcon();
+}
+
+void MainWindow::onClose() {
+    close();
+}
+
+void MainWindow::updateMaximizeIcon() {
+    if (m_maxBtn) {
+        if (isMaximized()) {
+            m_maxBtn->setIcon(themedIcon("actual-size"));
+        } else {
+            m_maxBtn->setIcon(themedIcon("maximize"));
+        }
+    }
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *event) {
+    if (event->button() == Qt::LeftButton) {
+        if (m_titleBar && m_titleBar->geometry().contains(event->pos())) {
+            m_dragging = true;
+            m_dragPos = event->globalPosition().toPoint() - frameGeometry().topLeft();
+            event->accept();
+            return;
+        }
+    }
+    QMainWindow::mousePressEvent(event);
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event) {
+    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
+        move(event->globalPosition().toPoint() - m_dragPos);
+        event->accept();
+        return;
+    }
+    QMainWindow::mouseMoveEvent(event);
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
+    if (event->button() == Qt::LeftButton) {
+        m_dragging = false;
+    }
+    QMainWindow::mouseReleaseEvent(event);
+}
+
+void MainWindow::mouseDoubleClickEvent(QMouseEvent *event) {
+    if (m_titleBar && m_titleBar->geometry().contains(event->pos())) {
+        onMaximize();
+        event->accept();
+        return;
+    }
+    QMainWindow::mouseDoubleClickEvent(event);
 }
 
 void MainWindow::stopCurrentLoading() {

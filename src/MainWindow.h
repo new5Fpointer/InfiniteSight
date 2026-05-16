@@ -16,6 +16,9 @@
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
+#include <QPushButton>
+#include <QHBoxLayout>
+#include <QFrame>
 #include "SettingsManager.h"
 #include "ImageLoader.h"
 
@@ -62,16 +65,27 @@ private slots:
     void mirrorImage();
     void navigateFolderImage(int direction);
 
+    void onMinimize();
+    void onMaximize();
+    void onClose();
+    void updateMaximizeIcon();
+
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 private:
     void setupUi();
     void createMenus();
     void createToolBar();
+    void createTitleBar();
+    void createBottomBar();
     void updateRecentFilesMenu();
     void startImageLoading(const QString &filePath);
     void stopCurrentLoading();
@@ -81,8 +95,33 @@ private:
     void applyStyleSheet();
     QIcon themedIcon(const QString &name);
     void refreshToolBarIcons();
+    void updateTitleBarTitle();
+    void updateBottomBarInfo();
 
     SettingsManager *m_settingsManager;
+
+    QWidget *m_titleBar;
+    QLabel *m_titleIcon;
+    QLabel *m_titleLabel;
+    QPushButton *m_menuBtn;
+    QPushButton *m_pinBtn;
+    QPushButton *m_minBtn;
+    QPushButton *m_maxBtn;
+    QPushButton *m_closeBtn;
+    QPoint m_dragPos;
+    bool m_dragging;
+
+    QWidget *m_bottomBar;
+    QLabel *m_fileInfoLabel;
+    QPushButton *m_prevBtn;
+    QLabel *m_pageLabel;
+    QPushButton *m_nextBtn;
+    QPushButton *m_fitBtn;
+    QPushButton *m_zoomCombo;
+    QPushButton *m_zoomOutBtn;
+    QPushButton *m_zoomInBtn;
+    QPushButton *m_copyBtn;
+    QPushButton *m_deleteBtn;
 
     QSplitter *m_splitter;
     ZoomableGraphicsView *m_graphicsView;
@@ -126,4 +165,7 @@ private:
     double m_scaleFactor;
     QStringList m_currentFolderImages;
     int m_currentFolderIndex;
+    int m_imageWidth;
+    int m_imageHeight;
+    qint64 m_fileSize;
 };
