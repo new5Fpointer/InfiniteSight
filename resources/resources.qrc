@@ -13,6 +13,7 @@
         <file>icons/dark/minimize.svg</file>
         <file>icons/dark/mirror-horizontal.svg</file>
         <file>icons/dark/pin.svg</file>
+        <file>icons/dark/restore.svg</file>
         <file>icons/dark/rotate-left.svg</file>
         <file>icons/dark/rotate-right.svg</file>
         <file>icons/dark/zoom-in.svg</file>
@@ -30,6 +31,7 @@
         <file>icons/light/minimize.svg</file>
         <file>icons/light/mirror-horizontal.svg</file>
         <file>icons/light/pin.svg</file>
+        <file>icons/light/restore.svg</file>
         <file>icons/light/rotate-left.svg</file>
         <file>icons/light/rotate-right.svg</file>
         <file>icons/light/zoom-in.svg</file>

@@ -108,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
     createTitleBar();
     createBottomBar();
     applySettings();
+    updateMaximizeIcon();
 }
 
 MainWindow::~MainWindow() {
@@ -395,63 +396,50 @@ void MainWindow::createMenus() {
 }
 
 void MainWindow::createToolBar() {
-    m_toolBar = addToolBar(tr("Tools"));
-    m_toolBar->setMovable(false);
-    m_toolBar->setIconSize(QSize(20, 20));
-
     m_zoomInAction = new QAction(themedIcon("zoom-in"), "", this);
     m_zoomInAction->setToolTip(tr("Zoom In") + " (Ctrl++)");
     m_zoomInAction->setShortcut(QKeySequence("Ctrl++"));
     connect(m_zoomInAction, &QAction::triggered, this, &MainWindow::zoomIn);
-    m_toolBar->addAction(m_zoomInAction);
 
     m_zoomOutAction = new QAction(themedIcon("zoom-out"), "", this);
     m_zoomOutAction->setToolTip(tr("Zoom Out") + " (Ctrl+-)");
     m_zoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
     connect(m_zoomOutAction, &QAction::triggered, this, &MainWindow::zoomOut);
-    m_toolBar->addAction(m_zoomOutAction);
 
     m_actualSizeAction = new QAction(themedIcon("actual-size"), "", this);
     m_actualSizeAction->setToolTip(tr("Actual Size") + " (Ctrl+0)");
     m_actualSizeAction->setShortcut(QKeySequence("Ctrl+0"));
     connect(m_actualSizeAction, &QAction::triggered, this, &MainWindow::actualSize);
-    m_toolBar->addAction(m_actualSizeAction);
 
     m_fitWindowAction = new QAction(themedIcon("fit-screen"), "", this);
     m_fitWindowAction->setToolTip(tr("Fit to Window") + " (Ctrl+1)");
     m_fitWindowAction->setShortcut(QKeySequence("Ctrl+1"));
     connect(m_fitWindowAction, &QAction::triggered, this, &MainWindow::fitToWindow);
-    m_toolBar->addAction(m_fitWindowAction);
 
     m_rotateLeftAction = new QAction(themedIcon("rotate-left"), "", this);
     m_rotateLeftAction->setToolTip(tr("Rotate left") + " (Ctrl+L)");
     m_rotateLeftAction->setShortcut(QKeySequence("Ctrl+L"));
     connect(m_rotateLeftAction, &QAction::triggered, this, [this]() { rotateImage(-90); });
-    m_toolBar->addAction(m_rotateLeftAction);
 
     m_rotateRightAction = new QAction(themedIcon("rotate-right"), "", this);
     m_rotateRightAction->setToolTip(tr("Rotate right") + " (Ctrl+R)");
     m_rotateRightAction->setShortcut(QKeySequence("Ctrl+R"));
     connect(m_rotateRightAction, &QAction::triggered, this, [this]() { rotateImage(90); });
-    m_toolBar->addAction(m_rotateRightAction);
 
     m_mirrorAction = new QAction(themedIcon("mirror-horizontal"), "", this);
     m_mirrorAction->setToolTip(tr("Mirror Horizontal") + " (Ctrl+M)");
     m_mirrorAction->setShortcut(QKeySequence("Ctrl+M"));
     connect(m_mirrorAction, &QAction::triggered, this, &MainWindow::mirrorImage);
-    m_toolBar->addAction(m_mirrorAction);
 
     m_prevImageAction = new QAction(themedIcon("chevron-left"), "", this);
     m_prevImageAction->setToolTip(tr("Previous Image") + " (Left)");
     m_prevImageAction->setShortcut(QKeySequence("Left"));
     connect(m_prevImageAction, &QAction::triggered, this, [this]() { navigateFolderImage(-1); });
-    m_toolBar->addAction(m_prevImageAction);
 
     m_nextImageAction = new QAction(themedIcon("chevron-right"), "", this);
     m_nextImageAction->setToolTip(tr("Next Image") + " (Right)");
     m_nextImageAction->setShortcut(QKeySequence("Right"));
     connect(m_nextImageAction, &QAction::triggered, this, [this]() { navigateFolderImage(1); });
-    m_toolBar->addAction(m_nextImageAction);
 }
 
 void MainWindow::updateRecentFilesMenu() {
@@ -836,6 +824,9 @@ void MainWindow::refreshToolBarIcons() {
         m_copyBtn->setIcon(themedIcon("copy"));
     if (m_deleteBtn)
         m_deleteBtn->setIcon(themedIcon("delete"));
+
+    if (m_maxBtn)
+        updateMaximizeIcon();
 }
 
 void MainWindow::updateTitleBarTitle() {
@@ -895,7 +886,7 @@ void MainWindow::onClose() {
 void MainWindow::updateMaximizeIcon() {
     if (m_maxBtn) {
         if (isMaximized()) {
-            m_maxBtn->setIcon(themedIcon("actual-size"));
+            m_maxBtn->setIcon(themedIcon("restore"));
         } else {
             m_maxBtn->setIcon(themedIcon("maximize"));
         }

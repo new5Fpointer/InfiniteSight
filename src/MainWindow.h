@@ -146,7 +146,6 @@ private:
     QAction *m_lightAction;
     QAction *m_clearAction;
 
-    QToolBar *m_toolBar;
     QAction *m_zoomInAction;
     QAction *m_zoomOutAction;
     QAction *m_actualSizeAction;
