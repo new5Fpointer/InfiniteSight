@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/dark/actual-size.svg</file>
+        <file>icons/dark/chevron-left.svg</file>
+        <file>icons/dark/chevron-right.svg</file>
+        <file>icons/dark/fit-screen.svg</file>
+        <file>icons/dark/folder-open.svg</file>
+        <file>icons/dark/mirror-horizontal.svg</file>
+        <file>icons/dark/rotate-left.svg</file>
+        <file>icons/dark/rotate-right.svg</file>
+        <file>icons/dark/zoom-in.svg</file>
+        <file>icons/dark/zoom-out.svg</file>
+        <file>icons/light/actual-size.svg</file>
+        <file>icons/light/chevron-left.svg</file>
+        <file>icons/light/chevron-right.svg</file>
+        <file>icons/light/fit-screen.svg</file>
+        <file>icons/light/folder-open.svg</file>
+        <file>icons/light/mirror-horizontal.svg</file>
+        <file>icons/light/rotate-left.svg</file>
+        <file>icons/light/rotate-right.svg</file>
+        <file>icons/light/zoom-in.svg</file>
+        <file>icons/light/zoom-out.svg</file>
+    </qresource>
+</RCC>

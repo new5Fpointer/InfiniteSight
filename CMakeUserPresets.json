@@ -1,0 +1,59 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "Qt-Debug",
+      "inherits": "Qt-Default",
+      "binaryDir": "${sourceDir}/out/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS": "-DQT_QML_DEBUG"
+      },
+      "environment": {
+        "QML_DEBUG_ARGS": "-qmljsdebugger=file:{795b9461-8f94-44c1-b5f2-2a581379c2e2},block"
+      }
+    },
+    {
+      "name": "Qt-Release",
+      "inherits": "Qt-Default",
+      "binaryDir": "${sourceDir}/out/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "hidden": true,
+      "name": "Qt-Default",
+      "inherits": "6.10.2_msvc2022_64",
+      "vendor": {
+        "qt-project.org/Default": {
+          "checksum": "elPMFYuVbUG1jbdnwSiZiGEbFis="
+        }
+      }
+    },
+    {
+      "hidden": true,
+      "name": "6.10.2_msvc2022_64",
+      "inherits": "Qt",
+      "environment": {
+        "QTDIR": "D:/Qt/6.10.2/msvc2022_64",
+        "VIPS_ROOT": "${sourceDir}/bin/vips-dev-8.18"
+      },
+      "architecture": {
+        "strategy": "external",
+        "value": "x64"
+      },
+      "generator": "Ninja",
+      "vendor": {
+        "qt-project.org/Version": {
+          "checksum": "Gg2FfUSYcZOADgNk67A1AI/CeRM="
+        }
+      }
+    }
+  ],
+  "vendor": {
+    "qt-project.org/Presets": {
+      "checksum": "owEUKUQOn7cUZShqnwxNcAgNiJs="
+    }
+  }
+}
