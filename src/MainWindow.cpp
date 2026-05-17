@@ -368,20 +368,34 @@ void MainWindow::createBottomBar() {
     m_deleteBtn = createBottomBtn("delete");
     m_deleteBtn->setToolTip(tr("Delete Image"));
     connect(m_deleteBtn, &QPushButton::clicked, this, [this]() {
-        if (!m_currentImagePath.isEmpty()) {
-            QFile file(m_currentImagePath);
-            if (file.remove()) {
-                qDebug().noquote() << tr("Image deleted");
-                initFolderRoaming(QFileInfo(m_currentImagePath).absolutePath());
-                if (!m_currentFolderImages.isEmpty()) {
-                    startImageLoading(m_currentFolderImages[qBound(0, m_currentFolderIndex, m_currentFolderImages.size() - 1)]);
-                } else {
-                    m_graphicsScene->clear();
-                    m_pixmapItem = nullptr;
-                    updateTitleBarTitle();
-                    updateBottomBarInfo();
-                }
+        if (m_currentImagePath.isEmpty())
+            return;
+
+        QFile file(m_currentImagePath);
+        if (!file.moveToTrash()) {
+            qDebug() << "Delete failed:" << file.errorString();
+            return;
+        }
+        qDebug() << "Image deleted";
+
+        int currentIndex = m_currentFolderIndex;
+        m_currentFolderImages.removeAt(currentIndex);
+
+        if (m_currentFolderImages.isEmpty()) {
+            m_graphicsScene->clear();
+            m_pixmapItem = nullptr;
+            m_currentImagePath.clear();
+            m_currentFolderIndex = -1;
+            updateTitleBarTitle();
+            updateBottomBarInfo();
+        } else {
+            if (currentIndex >= m_currentFolderImages.size()) {
+                m_currentFolderIndex = m_currentFolderImages.size() - 1;
+            } else {
+                m_currentFolderIndex = currentIndex;
             }
+
+            startImageLoading(m_currentFolderImages[m_currentFolderIndex]);
         }
     });
     centerLayout->addWidget(m_deleteBtn);
