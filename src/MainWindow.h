@@ -69,6 +69,7 @@ private slots:
     void onMaximize();
     void onClose();
     void updateMaximizeIcon();
+    void toggleFullscreen();
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
@@ -127,6 +128,7 @@ private:
     QPushButton *m_rotateRightBtn;
     QPushButton *m_copyBtn;
     QPushButton *m_deleteBtn;
+    QPushButton *m_fullscreenBtn;
 
     QSplitter *m_splitter;
     ZoomableGraphicsView *m_graphicsView;

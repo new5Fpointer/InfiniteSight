@@ -7,6 +7,8 @@
         <file>icons/dark/copy.svg</file>
         <file>icons/dark/delete.svg</file>
         <file>icons/dark/fit-screen.svg</file>
+        <file>icons/dark/fullscreen.svg</file>
+        <file>icons/dark/fullscreen-exit.svg</file>
         <file>icons/dark/folder-open.svg</file>
         <file>icons/dark/maximize.svg</file>
         <file>icons/dark/menu.svg</file>
@@ -25,6 +27,8 @@
         <file>icons/light/copy.svg</file>
         <file>icons/light/delete.svg</file>
         <file>icons/light/fit-screen.svg</file>
+        <file>icons/light/fullscreen.svg</file>
+        <file>icons/light/fullscreen-exit.svg</file>
         <file>icons/light/folder-open.svg</file>
         <file>icons/light/maximize.svg</file>
         <file>icons/light/menu.svg</file>

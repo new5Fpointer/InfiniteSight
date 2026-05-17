@@ -380,6 +380,11 @@ void MainWindow::createBottomBar() {
 
     bottomLayout->addStretch();
 
+    m_fullscreenBtn = createBottomBtn("fullscreen");
+    m_fullscreenBtn->setToolTip(tr("Fullscreen") + " (F11)");
+    connect(m_fullscreenBtn, &QPushButton::clicked, this, &MainWindow::toggleFullscreen);
+    bottomLayout->addWidget(m_fullscreenBtn);
+
     if (auto *lay = centralWidget()->layout()) {
         lay->addWidget(m_bottomBar);
     }
@@ -959,6 +964,22 @@ void MainWindow::updateMaximizeIcon() {
     }
 }
 
+void MainWindow::toggleFullscreen() {
+    if (isFullScreen()) {
+        showNormal();
+        if (m_fullscreenBtn) {
+            m_fullscreenBtn->setIcon(themedIcon("fullscreen"));
+            m_fullscreenBtn->setToolTip(tr("Fullscreen") + " (F11)");
+        }
+    } else {
+        showFullScreen();
+        if (m_fullscreenBtn) {
+            m_fullscreenBtn->setIcon(themedIcon("fullscreen-exit"));
+            m_fullscreenBtn->setToolTip(tr("Exit Fullscreen") + " (F11)");
+        }
+    }
+}
+
 void MainWindow::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
         if (m_titleBar && m_titleBar->geometry().contains(event->pos())) {
@@ -1104,6 +1125,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         navigateFolderImage(-1);
     } else if (event->key() == Qt::Key_Right) {
         navigateFolderImage(1);
+    } else if (event->key() == Qt::Key_F11) {
+        toggleFullscreen();
     } else {
         QMainWindow::keyPressEvent(event);
     }
