@@ -26,22 +26,22 @@ ZoomableGraphicsView::ZoomableGraphicsView(QWidget *parent)
     : QGraphicsView(parent) {
     setAcceptDrops(true);
     setDragMode(QGraphicsView::ScrollHandDrag);
-    setRenderHint(QPainter::SmoothPixmapTransform);
+    setRenderHint(QPainter::SmoothPixmapTransform, true);
     setAlignment(Qt::AlignCenter);
-    setRenderHint(QPainter::Antialiasing);
-    setRenderHint(QPainter::TextAntialiasing);
+    setRenderHint(QPainter::Antialiasing, true);
+    setRenderHint(QPainter::TextAntialiasing, true);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     setCacheMode(QGraphicsView::CacheBackground);
     setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing, true);
-    setViewport(new QOpenGLWidget(this));
-    if (auto* glWidget = qobject_cast<QOpenGLWidget*>(viewport())) {
-        glWidget->setFormat([]{
-            QSurfaceFormat fmt;
-            fmt.setSamples(4);
-            fmt.setRenderableType(QSurfaceFormat::OpenGL);
-            return fmt;
-        }());
-    }
+    // setViewport(new QOpenGLWidget(this));
+    // if (auto* glWidget = qobject_cast<QOpenGLWidget*>(viewport())) {
+    //     glWidget->setFormat([]{
+    //         QSurfaceFormat fmt;
+    //         fmt.setSamples(4);
+    //         fmt.setRenderableType(QSurfaceFormat::OpenGL);
+    //         return fmt;
+    //     }());
+    // }
 }
 
 void ZoomableGraphicsView::wheelEvent(QWheelEvent *event) {
@@ -106,7 +106,7 @@ MainWindow::MainWindow(QWidget *parent)
       m_graphicsScene(new QGraphicsScene(this)), m_pixmapItem(nullptr), m_progressBar(new QProgressBar(this)),
       m_loadingLabel(new QLabel(this)), m_roamLabel(new QLabel(this)), m_loaderThread(nullptr), m_imageLoader(nullptr),
       m_scaleFactor(1.0), m_currentFolderIndex(-1), m_imageWidth(0), m_imageHeight(0), m_fileSize(0), m_dragging(false) {
-    setWindowTitle(tr("InfiniteSight - Modern Image Viewer"));
+    setWindowTitle("InfiniteSight");
     setGeometry(100, 100, 1400, 900);
     setAcceptDrops(true);
 
@@ -650,6 +650,7 @@ void MainWindow::onImageLoaded(const QPixmap &pixmap, const QString &filePath, c
     m_graphicsScene->clear();
 
     m_pixmapItem = new QGraphicsPixmapItem(pixmap);
+    m_pixmapItem->setTransformationMode(Qt::SmoothTransformation);
     m_graphicsScene->addItem(m_pixmapItem);
     m_graphicsView->setSceneRect(m_graphicsScene->itemsBoundingRect());
     m_graphicsView->fitInView(m_pixmapItem, Qt::KeepAspectRatio);
