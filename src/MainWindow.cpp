@@ -4,6 +4,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
+#include <QOpenGLWidget>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -31,6 +32,16 @@ ZoomableGraphicsView::ZoomableGraphicsView(QWidget *parent)
     setRenderHint(QPainter::TextAntialiasing);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     setCacheMode(QGraphicsView::CacheBackground);
+    setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing, true);
+    setViewport(new QOpenGLWidget(this));
+    if (auto* glWidget = qobject_cast<QOpenGLWidget*>(viewport())) {
+        glWidget->setFormat([]{
+            QSurfaceFormat fmt;
+            fmt.setSamples(4);
+            fmt.setRenderableType(QSurfaceFormat::OpenGL);
+            return fmt;
+        }());
+    }
 }
 
 void ZoomableGraphicsView::wheelEvent(QWheelEvent *event) {
