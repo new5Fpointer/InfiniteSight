@@ -4,7 +4,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
-#include <QOpenGLWidget>
+#include <QDebug>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -14,9 +14,9 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QMovie>
+#include <QOpenGLWidget>
 #include <QScrollBar>
 #include <QSplitter>
-#include <QDebug>
 #include <QTransform>
 #include <QUrl>
 #include <QUuid>
@@ -249,11 +249,35 @@ void MainWindow::createBottomBar() {
 
     QHBoxLayout *bottomLayout = new QHBoxLayout(m_bottomBar);
     bottomLayout->setContentsMargins(12, 0, 12, 0);
-    bottomLayout->setSpacing(6);
+    bottomLayout->setSpacing(0);
 
-    m_fileInfoLabel = new QLabel(this);
-    m_fileInfoLabel->setObjectName("fileInfoLabel");
-    bottomLayout->addWidget(m_fileInfoLabel);
+    auto createInfoBlock = [this](const QString &objName) -> QLabel * {
+        QLabel *label = new QLabel(this);
+        label->setObjectName(objName);
+        label->setAlignment(Qt::AlignCenter);
+        label->setFixedHeight(24);
+        return label;
+    };
+
+    QWidget *infoContainer = new QWidget(this);
+    infoContainer->setObjectName("infoContainer");
+    QHBoxLayout *infoLayout = new QHBoxLayout(infoContainer);
+    infoLayout->setContentsMargins(0, 0, 0, 0);
+    infoLayout->setSpacing(6);
+
+    m_fileSizeLabel = createInfoBlock("infoBlock");
+    m_fileSizeLabel->setFixedWidth(60);
+    infoLayout->addWidget(m_fileSizeLabel);
+
+    m_fileDimensionLabel = createInfoBlock("infoBlock");
+    m_fileDimensionLabel->setFixedWidth(80);
+    infoLayout->addWidget(m_fileDimensionLabel);
+
+    m_fileFormatLabel = createInfoBlock("infoBlock");
+    m_fileFormatLabel->setFixedWidth(50);
+    infoLayout->addWidget(m_fileFormatLabel);
+
+    bottomLayout->addWidget(infoContainer);
 
     bottomLayout->addStretch();
 
@@ -270,43 +294,48 @@ void MainWindow::createBottomBar() {
         return btn;
     };
 
+    QWidget *centerContainer = new QWidget(this);
+    QHBoxLayout *centerLayout = new QHBoxLayout(centerContainer);
+    centerLayout->setContentsMargins(0, 0, 0, 0);
+    centerLayout->setSpacing(6);
+
     m_prevBtn = createBottomBtn("chevron-left");
     connect(m_prevBtn, &QPushButton::clicked, this, [this]() { navigateFolderImage(-1); });
-    bottomLayout->addWidget(m_prevBtn);
+    centerLayout->addWidget(m_prevBtn);
 
     m_pageLabel = new QLabel("0 / 0", this);
     m_pageLabel->setObjectName("pageLabel");
     m_pageLabel->setAlignment(Qt::AlignCenter);
     m_pageLabel->setFixedWidth(60);
-    bottomLayout->addWidget(m_pageLabel);
+    centerLayout->addWidget(m_pageLabel);
 
     m_nextBtn = createBottomBtn("chevron-right");
     connect(m_nextBtn, &QPushButton::clicked, this, [this]() { navigateFolderImage(1); });
-    bottomLayout->addWidget(m_nextBtn);
+    centerLayout->addWidget(m_nextBtn);
 
-    bottomLayout->addSpacing(16);
+    centerLayout->addSpacing(16);
 
     m_fitBtn = createBottomBtn("fit-screen");
     m_fitBtn->setToolTip(tr("Fit to Window"));
     connect(m_fitBtn, &QPushButton::clicked, this, &MainWindow::fitToWindow);
-    bottomLayout->addWidget(m_fitBtn);
+    centerLayout->addWidget(m_fitBtn);
 
     m_zoomCombo = createBottomBtn("", 56);
     m_zoomCombo->setText("100%");
     connect(m_zoomCombo, &QPushButton::clicked, this, &MainWindow::actualSize);
-    bottomLayout->addWidget(m_zoomCombo);
+    centerLayout->addWidget(m_zoomCombo);
 
     m_zoomOutBtn = createBottomBtn("zoom-out");
     m_zoomOutBtn->setToolTip(tr("Zoom Out"));
     connect(m_zoomOutBtn, &QPushButton::clicked, this, &MainWindow::zoomOut);
-    bottomLayout->addWidget(m_zoomOutBtn);
+    centerLayout->addWidget(m_zoomOutBtn);
 
     m_zoomInBtn = createBottomBtn("zoom-in");
     m_zoomInBtn->setToolTip(tr("Zoom In"));
     connect(m_zoomInBtn, &QPushButton::clicked, this, &MainWindow::zoomIn);
-    bottomLayout->addWidget(m_zoomInBtn);
+    centerLayout->addWidget(m_zoomInBtn);
 
-    bottomLayout->addSpacing(16);
+    centerLayout->addSpacing(16);
 
     m_copyBtn = createBottomBtn("copy");
     m_copyBtn->setToolTip(tr("Copy Image"));
@@ -316,7 +345,7 @@ void MainWindow::createBottomBar() {
             qDebug().noquote() << tr("Image copied to clipboard");
         }
     });
-    bottomLayout->addWidget(m_copyBtn);
+    centerLayout->addWidget(m_copyBtn);
 
     m_deleteBtn = createBottomBtn("delete");
     m_deleteBtn->setToolTip(tr("Delete Image"));
@@ -337,7 +366,11 @@ void MainWindow::createBottomBar() {
             }
         }
     });
-    bottomLayout->addWidget(m_deleteBtn);
+    centerLayout->addWidget(m_deleteBtn);
+
+    bottomLayout->addWidget(centerContainer);
+
+    bottomLayout->addStretch();
 
     if (auto *lay = centralWidget()->layout()) {
         lay->addWidget(m_bottomBar);
@@ -777,6 +810,7 @@ void MainWindow::applyStyleSheet() {
                         "#pageLabel { color: %15; font-size: 12px; }"
                         "#bottomBtn { background-color: transparent; border: none; border-radius: 4px; }"
                         "#bottomBtn:hover { background-color: %16; }"
+                        "#infoBlock { background-color: %18; color: %15; font-size: 11px; border-radius: 4px; padding: 2px 8px; }"
                         "QGraphicsView { background-color: %19; border: none; }")
                         .arg(bg, text, a.uiFont)
                         .arg(a.uiFontSize)
@@ -847,7 +881,14 @@ void MainWindow::updateTitleBarTitle() {
 
 void MainWindow::updateBottomBarInfo() {
     if (m_currentImagePath.isEmpty()) {
-        m_fileInfoLabel->setText("");
+        if (m_fileInfoLabel)
+            m_fileInfoLabel->setText("");
+        if (m_fileSizeLabel)
+            m_fileSizeLabel->setText("");
+        if (m_fileDimensionLabel)
+            m_fileDimensionLabel->setText("");
+        if (m_fileFormatLabel)
+            m_fileFormatLabel->setText("");
         m_pageLabel->setText("0 / 0");
         m_zoomCombo->setText("100%");
         return;
@@ -864,7 +905,12 @@ void MainWindow::updateBottomBarInfo() {
         sizeStr = QString("%1M").arg(m_fileSize / (1024.0 * 1024.0), 0, 'f', 2);
     }
 
-    m_fileInfoLabel->setText(QString("%1   %2x%3   %4").arg(sizeStr).arg(m_imageWidth).arg(m_imageHeight).arg(ext));
+    if (m_fileSizeLabel)
+        m_fileSizeLabel->setText(sizeStr);
+    if (m_fileDimensionLabel)
+        m_fileDimensionLabel->setText(QString("%1x%2").arg(m_imageWidth).arg(m_imageHeight));
+    if (m_fileFormatLabel)
+        m_fileFormatLabel->setText(ext);
 
     int curr = m_currentFolderIndex >= 0 ? m_currentFolderIndex + 1 : 1;
     int total = m_currentFolderImages.isEmpty() ? 1 : m_currentFolderImages.size();

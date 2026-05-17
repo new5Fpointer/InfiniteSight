@@ -1,26 +1,26 @@
 #pragma once
 
-#include <QMainWindow>
-#include <QGraphicsView>
-#include <QGraphicsScene>
-#include <QGraphicsPixmapItem>
-#include <QDockWidget>
-#include <QTreeWidget>
-#include <QProgressBar>
-#include <QLabel>
-#include <QThread>
+#include "ImageLoader.h"
+#include "SettingsManager.h"
 #include <QAction>
-#include <QMenu>
-#include <QToolBar>
-#include <QSplitter>
+#include <QDockWidget>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
-#include <QPushButton>
-#include <QHBoxLayout>
 #include <QFrame>
-#include "SettingsManager.h"
-#include "ImageLoader.h"
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMainWindow>
+#include <QMenu>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QSplitter>
+#include <QThread>
+#include <QToolBar>
+#include <QTreeWidget>
 
 class ZoomableGraphicsView : public QGraphicsView {
     Q_OBJECT
@@ -113,6 +113,9 @@ private:
 
     QWidget *m_bottomBar;
     QLabel *m_fileInfoLabel;
+    QLabel *m_fileSizeLabel;
+    QLabel *m_fileDimensionLabel;
+    QLabel *m_fileFormatLabel;
     QPushButton *m_prevBtn;
     QLabel *m_pageLabel;
     QPushButton *m_nextBtn;
