@@ -166,6 +166,8 @@ private:
     QThread *m_loaderThread;
     ImageLoader *m_imageLoader;
 
+    bool m_wasInfoPanelVisible;
+
     QString m_currentImagePath;
     QString m_currentJobId;
     double m_scaleFactor;

@@ -105,7 +105,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_settingsManager(new SettingsManager(this)), m_graphicsView(new ZoomableGraphicsView(this)),
       m_graphicsScene(new QGraphicsScene(this)), m_pixmapItem(nullptr), m_progressBar(new QProgressBar(this)),
       m_loadingLabel(new QLabel(this)), m_roamLabel(new QLabel(this)), m_loaderThread(nullptr), m_imageLoader(nullptr),
-      m_scaleFactor(1.0), m_currentFolderIndex(-1), m_imageWidth(0), m_imageHeight(0), m_fileSize(0), m_dragging(false) {
+      m_scaleFactor(1.0), m_currentFolderIndex(-1), m_imageWidth(0), m_imageHeight(0), m_fileSize(0), m_dragging(false),
+      m_wasInfoPanelVisible(false) {
     setWindowTitle("InfiniteSight");
     setGeometry(100, 100, 1400, 900);
     setAcceptDrops(true);
@@ -967,12 +968,31 @@ void MainWindow::updateMaximizeIcon() {
 void MainWindow::toggleFullscreen() {
     if (isFullScreen()) {
         showNormal();
+        if (m_titleBar)
+            m_titleBar->setVisible(true);
+        if (m_infoDock) {
+            m_infoDock->setVisible(m_wasInfoPanelVisible);
+        }
+        if (m_bottomBar) {
+            m_bottomBar->setStyleSheet("");
+        }
         if (m_fullscreenBtn) {
             m_fullscreenBtn->setIcon(themedIcon("fullscreen"));
             m_fullscreenBtn->setToolTip(tr("Fullscreen") + " (F11)");
         }
+        applyStyleSheet();
     } else {
+        m_wasInfoPanelVisible = m_infoDock && m_infoDock->isVisible();
         showFullScreen();
+        if (m_titleBar)
+            m_titleBar->setVisible(false);
+        if (m_infoDock)
+            m_infoDock->setVisible(false);
+        if (m_bottomBar) {
+            QString theme = m_settingsManager->appearance().theme;
+            QString bg = theme == "dark" ? "rgba(37, 37, 38, 0.6)" : "rgba(240, 240, 240, 0.6)";
+            m_bottomBar->setStyleSheet(QString("background-color: %1; border-top: 1px solid transparent;").arg(bg));
+        }
         if (m_fullscreenBtn) {
             m_fullscreenBtn->setIcon(themedIcon("fullscreen-exit"));
             m_fullscreenBtn->setToolTip(tr("Exit Fullscreen") + " (F11)");
