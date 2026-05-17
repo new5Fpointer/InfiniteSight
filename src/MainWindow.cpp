@@ -789,7 +789,7 @@ void MainWindow::applyStyleSheet() {
     QString scrollHandleHover = theme == "dark" ? "#808080" : "#A0A0A0";
     QString titleBarBg = theme == "dark" ? "#2D2D30" : "#F3F3F3";
     QString titleBarText = theme == "dark" ? "#E0E0E0" : "#000000";
-    QString bottomBarBg = theme == "dark" ? "#252526" : "#F0F0F0";
+    QString bottomBarBg = theme == "dark" ? "#2D2D30" : "#FFFFFF";
     QString btnHover = theme == "dark" ? "#3F3F46" : "#E5E5E5";
     QString closeHover = "#E81123";
     QString viewBg = theme == "dark" ? "#1E1E1E" : "#FFFFFF";
@@ -988,11 +988,11 @@ void MainWindow::toggleFullscreen() {
             m_titleBar->setVisible(false);
         if (m_infoDock)
             m_infoDock->setVisible(false);
-        if (m_bottomBar) {
-            QString theme = m_settingsManager->appearance().theme;
-            QString bg = theme == "dark" ? "rgba(37, 37, 38, 0.6)" : "rgba(240, 240, 240, 0.6)";
-            m_bottomBar->setStyleSheet(QString("background-color: %1; border-top: 1px solid transparent;").arg(bg));
-        }
+        // if (m_bottomBar) {
+        //     QString theme = m_settingsManager->appearance().theme;
+        //     QString bg = theme == "dark" ? "rgba(37, 37, 38, 0.6)" : "rgba(240, 240, 240, 0.6)";
+        //     m_bottomBar->setStyleSheet(QString("background-color: %1; border-top: 1px solid transparent;").arg(bg));
+        // }
         if (m_fullscreenBtn) {
             m_fullscreenBtn->setIcon(themedIcon("fullscreen-exit"));
             m_fullscreenBtn->setToolTip(tr("Exit Fullscreen") + " (F11)");
