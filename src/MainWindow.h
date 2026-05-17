@@ -123,6 +123,8 @@ private:
     QPushButton *m_zoomCombo;
     QPushButton *m_zoomOutBtn;
     QPushButton *m_zoomInBtn;
+    QPushButton *m_rotateLeftBtn;
+    QPushButton *m_rotateRightBtn;
     QPushButton *m_copyBtn;
     QPushButton *m_deleteBtn;
 

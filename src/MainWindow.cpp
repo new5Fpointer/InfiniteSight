@@ -335,7 +335,15 @@ void MainWindow::createBottomBar() {
     connect(m_zoomInBtn, &QPushButton::clicked, this, &MainWindow::zoomIn);
     centerLayout->addWidget(m_zoomInBtn);
 
-    centerLayout->addSpacing(16);
+    m_rotateLeftBtn = createBottomBtn("rotate-left");
+    m_rotateLeftBtn->setToolTip(tr("Rotate left") + " (Ctrl+L)");
+    connect(m_rotateLeftBtn, &QPushButton::clicked, this, [this]() { rotateImage(-90); });
+    centerLayout->addWidget(m_rotateLeftBtn);
+
+    m_rotateRightBtn = createBottomBtn("rotate-right");
+    m_rotateRightBtn->setToolTip(tr("Rotate right") + " (Ctrl+R)");
+    connect(m_rotateRightBtn, &QPushButton::clicked, this, [this]() { rotateImage(90); });
+    centerLayout->addWidget(m_rotateRightBtn);
 
     m_copyBtn = createBottomBtn("copy");
     m_copyBtn->setToolTip(tr("Copy Image"));
@@ -862,6 +870,10 @@ void MainWindow::refreshToolBarIcons() {
         m_zoomOutBtn->setIcon(themedIcon("zoom-out"));
     if (m_zoomInBtn)
         m_zoomInBtn->setIcon(themedIcon("zoom-in"));
+    if (m_rotateLeftBtn)
+        m_rotateLeftBtn->setIcon(themedIcon("rotate-left"));
+    if (m_rotateRightBtn)
+        m_rotateRightBtn->setIcon(themedIcon("rotate-right"));
     if (m_copyBtn)
         m_copyBtn->setIcon(themedIcon("copy"));
     if (m_deleteBtn)
