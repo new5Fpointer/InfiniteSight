@@ -558,7 +558,10 @@ void MainWindow::actualSize() {
 
 void MainWindow::fitToWindow() {
     if (m_pixmapItem) {
+        m_graphicsView->resetTransform();
         m_graphicsView->fitInView(m_pixmapItem, Qt::KeepAspectRatio);
+        QTransform transform = m_graphicsView->transform();
+        m_scaleFactor = transform.m11();
         updateBottomBarInfo();
     }
 }
