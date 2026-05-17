@@ -119,6 +119,15 @@ MainWindow::MainWindow(QWidget *parent)
     createToolBar();
     createTitleBar();
     createBottomBar();
+
+    m_bottomBarTimer = new QTimer(this);
+    m_bottomBarTimer->setSingleShot(true);
+    m_bottomBarTimer->setInterval(1500);
+    connect(m_bottomBarTimer, &QTimer::timeout, this, &MainWindow::hideBottomBarAnimated);
+    m_graphicsView->setMouseTracking(true);
+    m_graphicsView->viewport()->setMouseTracking(true);
+    m_graphicsView->viewport()->installEventFilter(this);
+
     applySettings();
     updateMaximizeIcon();
 }
@@ -386,13 +395,14 @@ void MainWindow::createBottomBar() {
     connect(m_fullscreenBtn, &QPushButton::clicked, this, &MainWindow::toggleFullscreen);
     bottomLayout->addWidget(m_fullscreenBtn);
 
-    m_bottomBar->setParent(centralWidget());
-    m_bottomBar->raise();
+    if (auto *lay = centralWidget()->layout()) {
+        lay->addWidget(m_bottomBar);
+    }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
     QMainWindow::resizeEvent(event);
-    if (m_bottomBar) {
+    if (m_bottomBar && isFullScreen()) {
         int barHeight = m_bottomBar->height();
         m_bottomBar->setGeometry(0, height() - barHeight, width(), barHeight);
     }
@@ -983,6 +993,11 @@ void MainWindow::updateMaximizeIcon() {
 
 void MainWindow::toggleFullscreen() {
     if (isFullScreen()) {
+        m_bottomBarTimer->stop();
+        if (m_bottomBar) {
+            m_bottomBar->setVisible(true);
+            centralWidget()->layout()->addWidget(m_bottomBar);
+        }
         showNormal();
         if (m_titleBar)
             m_titleBar->setVisible(true);
@@ -994,6 +1009,11 @@ void MainWindow::toggleFullscreen() {
         }
         applyStyleSheet();
     } else {
+        if (m_bottomBar) {
+            m_bottomBar->setParent(centralWidget());
+            m_bottomBar->raise();
+            m_bottomBar->setVisible(false);
+        }
         showFullScreen();
         if (m_titleBar)
             m_titleBar->setVisible(false);
@@ -1005,6 +1025,32 @@ void MainWindow::toggleFullscreen() {
         }
         applyStyleSheet();
     }
+}
+
+void MainWindow::hideBottomBarAnimated() {
+    if (m_bottomBar)
+        m_bottomBar->setVisible(false);
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+    if (event->type() == QEvent::MouseMove && isFullScreen() && m_bottomBar) {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        QPoint localPos = mapFromGlobal(me->globalPosition().toPoint());
+        int barHeight = m_bottomBar->height();
+        int triggerZone = barHeight + 20;
+        if (localPos.y() >= height() - triggerZone) {
+            if (!m_bottomBar->isVisible()) {
+                m_bottomBar->setVisible(true);
+                m_bottomBar->raise();
+            }
+            m_bottomBarTimer->stop();
+        } else {
+            if (m_bottomBar->isVisible()) {
+                m_bottomBarTimer->start();
+            }
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event) {
@@ -1024,6 +1070,21 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event) {
         move(event->globalPosition().toPoint() - m_dragPos);
         event->accept();
         return;
+    }
+    if (isFullScreen() && m_bottomBar) {
+        int barHeight = m_bottomBar->height();
+        int triggerZone = barHeight + 20;
+        if (event->pos().y() >= height() - triggerZone) {
+            if (!m_bottomBar->isVisible()) {
+                m_bottomBar->setVisible(true);
+                m_bottomBar->raise();
+            }
+            m_bottomBarTimer->stop();
+        } else {
+            if (m_bottomBar->isVisible()) {
+                m_bottomBarTimer->start();
+            }
+        }
     }
     QMainWindow::mouseMoveEvent(event);
 }

@@ -20,6 +20,8 @@
 #include <QResizeEvent>
 #include <QSplitter>
 #include <QThread>
+#include <QTimer>
+#include <QEvent>
 #include <QToolBar>
 #include <QTreeWidget>
 
@@ -71,6 +73,7 @@ private slots:
     void onClose();
     void updateMaximizeIcon();
     void toggleFullscreen();
+    void hideBottomBarAnimated();
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
@@ -82,6 +85,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     void setupUi();
@@ -113,6 +117,7 @@ private:
     QPushButton *m_closeBtn;
     QPoint m_dragPos;
     bool m_dragging;
+    QTimer *m_bottomBarTimer;
 
     QWidget *m_bottomBar;
     QWidget *m_infoContainer;
