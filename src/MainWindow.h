@@ -113,6 +113,7 @@ private:
     bool m_dragging;
 
     QWidget *m_bottomBar;
+    QWidget *m_infoContainer;
     QLabel *m_fileInfoLabel;
     QLabel *m_fileSizeLabel;
     QLabel *m_fileDimensionLabel;
@@ -165,8 +166,6 @@ private:
 
     QThread *m_loaderThread;
     ImageLoader *m_imageLoader;
-
-    bool m_wasInfoPanelVisible;
 
     QString m_currentImagePath;
     QString m_currentJobId;
