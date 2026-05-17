@@ -17,6 +17,7 @@
 #include <QOpenGLWidget>
 #include <QScrollBar>
 #include <QSplitter>
+#include <QStyle>
 #include <QTransform>
 #include <QUrl>
 #include <QUuid>
@@ -385,8 +386,15 @@ void MainWindow::createBottomBar() {
     connect(m_fullscreenBtn, &QPushButton::clicked, this, &MainWindow::toggleFullscreen);
     bottomLayout->addWidget(m_fullscreenBtn);
 
-    if (auto *lay = centralWidget()->layout()) {
-        lay->addWidget(m_bottomBar);
+    m_bottomBar->setParent(centralWidget());
+    m_bottomBar->raise();
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event) {
+    QMainWindow::resizeEvent(event);
+    if (m_bottomBar) {
+        int barHeight = m_bottomBar->height();
+        m_bottomBar->setGeometry(0, height() - barHeight, width(), barHeight);
     }
 }
 
@@ -789,6 +797,7 @@ void MainWindow::applyStyleSheet() {
     QString titleBarBg = theme == "dark" ? "#2D2D30" : "#F3F3F3";
     QString titleBarText = theme == "dark" ? "#E0E0E0" : "#000000";
     QString bottomBarBg = theme == "dark" ? "#2D2D30" : "#FFFFFF";
+    QString bottomBarBgFullscreen = theme == "dark" ? "#2D2D30E6" : "#FFFFFFE6";
     QString btnHover = theme == "dark" ? "#3F3F46" : "#E5E5E5";
     QString closeHover = "#E81123";
     QString viewBg = theme == "dark" ? "#1E1E1E" : "#FFFFFF";
@@ -819,6 +828,7 @@ void MainWindow::applyStyleSheet() {
                         "#closeBtn { background-color: transparent; border: none; border-radius: 0px; }"
                         "#closeBtn:hover { background-color: %17; }"
                         "#bottomBar { background-color: %18; border-top: 1px solid %7; }"
+                        "#bottomBar[fullscreen=\"true\"] { background-color: %20; border-top: 1px solid %7; }"
                         "#fileInfoLabel { color: %15; font-size: 12px; padding: 0 8px; }"
                         "#pageLabel { color: %15; font-size: 12px; }"
                         "#bottomBtn { background-color: transparent; border: none; border-radius: 4px; }"
@@ -828,9 +838,16 @@ void MainWindow::applyStyleSheet() {
                         .arg(bg, text, a.uiFont)
                         .arg(a.uiFontSize)
                         .arg(titleBarBg, menuText, border, selected, accent, progressBg, scrollBg, scrollHandle, scrollHandleHover)
-                        .arg(titleBarBg, titleBarText, btnHover, closeHover, bottomBarBg, viewBg);
+                        .arg(titleBarBg, titleBarText, btnHover, closeHover, bottomBarBg, viewBg)
+                        .arg(bottomBarBgFullscreen);
 
     setStyleSheet(style);
+
+    if (m_bottomBar) {
+        m_bottomBar->setProperty("fullscreen", isFullScreen());
+        m_bottomBar->style()->unpolish(m_bottomBar);
+        m_bottomBar->style()->polish(m_bottomBar);
+    }
 }
 
 QIcon MainWindow::themedIcon(const QString &name) {
@@ -986,6 +1003,7 @@ void MainWindow::toggleFullscreen() {
             m_fullscreenBtn->setIcon(themedIcon("fullscreen-exit"));
             m_fullscreenBtn->setToolTip(tr("Exit Fullscreen") + " (F11)");
         }
+        applyStyleSheet();
     }
 }
 
