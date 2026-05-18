@@ -7,6 +7,7 @@
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
+#include <QEvent>
 #include <QFrame>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
@@ -21,7 +22,6 @@
 #include <QSplitter>
 #include <QThread>
 #include <QTimer>
-#include <QEvent>
 #include <QToolBar>
 #include <QTreeWidget>
 
@@ -137,6 +137,7 @@ private:
     QPushButton *m_copyBtn;
     QPushButton *m_deleteBtn;
     QPushButton *m_fullscreenBtn;
+    bool m_bottomBarInLayout = false;
 
     QSplitter *m_splitter;
     ZoomableGraphicsView *m_graphicsView;

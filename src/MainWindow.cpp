@@ -256,6 +256,7 @@ void MainWindow::createBottomBar() {
     m_bottomBar = new QWidget(this);
     m_bottomBar->setObjectName("bottomBar");
     m_bottomBar->setFixedHeight(40);
+    m_bottomBar->setAttribute(Qt::WA_TransparentForMouseEvents, false);
 
     QHBoxLayout *bottomLayout = new QHBoxLayout(m_bottomBar);
     bottomLayout->setContentsMargins(12, 0, 12, 0);
@@ -412,6 +413,7 @@ void MainWindow::createBottomBar() {
     if (auto *lay = centralWidget()->layout()) {
         lay->addWidget(m_bottomBar);
     }
+    m_bottomBarInLayout = true;
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
@@ -1010,7 +1012,12 @@ void MainWindow::toggleFullscreen() {
         m_bottomBarTimer->stop();
         if (m_bottomBar) {
             m_bottomBar->setVisible(true);
-            centralWidget()->layout()->addWidget(m_bottomBar);
+            if (!m_bottomBarInLayout) {
+                if (auto *lay = centralWidget()->layout()) {
+                    lay->addWidget(m_bottomBar);
+                    m_bottomBarInLayout = true;
+                }
+            }
         }
         showNormal();
         if (m_titleBar)
@@ -1024,9 +1031,15 @@ void MainWindow::toggleFullscreen() {
         applyStyleSheet();
     } else {
         if (m_bottomBar) {
+            if (m_bottomBarInLayout) {
+                if (auto *lay = centralWidget()->layout()) {
+                    lay->removeWidget(m_bottomBar);
+                    m_bottomBarInLayout = false;
+                }
+            }
             m_bottomBar->setParent(centralWidget());
-            m_bottomBar->raise();
             m_bottomBar->setVisible(false);
+            m_bottomBar->raise();
         }
         showFullScreen();
         if (m_titleBar)
@@ -1042,7 +1055,7 @@ void MainWindow::toggleFullscreen() {
 }
 
 void MainWindow::hideBottomBarAnimated() {
-    if (m_bottomBar)
+    if (m_bottomBar && isFullScreen())
         m_bottomBar->setVisible(false);
 }
 
