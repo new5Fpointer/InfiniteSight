@@ -305,8 +305,9 @@ void MainWindow::createBottomBar() {
         return btn;
     };
 
-    QWidget *centerContainer = new QWidget(this);
-    QHBoxLayout *centerLayout = new QHBoxLayout(centerContainer);
+    m_centerContainer = new QWidget(m_bottomBar);
+    m_centerContainer->setObjectName("centerContainer");
+    QHBoxLayout *centerLayout = new QHBoxLayout(m_centerContainer);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     centerLayout->setSpacing(6);
 
@@ -401,9 +402,8 @@ void MainWindow::createBottomBar() {
     });
     centerLayout->addWidget(m_deleteBtn);
 
-    bottomLayout->addWidget(centerContainer);
-
-    bottomLayout->addStretch();
+    m_centerContainer->adjustSize();
+    m_centerContainer->setFixedSize(m_centerContainer->sizeHint());
 
     m_fullscreenBtn = createBottomBtn("fullscreen");
     m_fullscreenBtn->setToolTip(tr("Fullscreen") + " (F11)");
@@ -421,6 +421,11 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     if (m_bottomBar && isFullScreen()) {
         int barHeight = m_bottomBar->height();
         m_bottomBar->setGeometry(0, height() - barHeight, width(), barHeight);
+    }
+    if (m_bottomBar && m_centerContainer) {
+        int x = (m_bottomBar->width() - m_centerContainer->width()) / 2;
+        int y = (m_bottomBar->height() - m_centerContainer->height()) / 2;
+        m_centerContainer->move(x, y);
     }
 }
 
@@ -855,6 +860,7 @@ void MainWindow::applyStyleSheet() {
                         "#closeBtn:hover { background-color: %17; }"
                         "#bottomBar { background-color: %18; border-top: 1px solid %7; }"
                         "#bottomBar[fullscreen=\"true\"] { background-color: %20; border-top: 1px solid %7; }"
+                        "#centerContainer { background-color: transparent; }"
                         "#fileInfoLabel { color: %15; font-size: 12px; padding: 0 8px; }"
                         "#pageLabel { color: %15; font-size: 12px; }"
                         "#bottomBtn { background-color: transparent; border: none; border-radius: 4px; }"

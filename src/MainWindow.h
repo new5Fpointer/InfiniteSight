@@ -121,6 +121,7 @@ private:
 
     QWidget *m_bottomBar;
     QWidget *m_infoContainer;
+    QWidget *m_centerContainer;
     QLabel *m_fileInfoLabel;
     QLabel *m_fileSizeLabel;
     QLabel *m_fileDimensionLabel;
