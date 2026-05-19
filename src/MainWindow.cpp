@@ -832,6 +832,7 @@ void MainWindow::applyStyleSheet() {
     QString btnHover = theme == "dark" ? "#3F3F46" : "#E5E5E5";
     QString closeHover = "#E81123";
     QString viewBg = theme == "dark" ? "#1E1E1E" : "#FFFFFF";
+    QString pageLabelBorder = theme == "dark" ? "#555555" : "#CCCCCC";
 
     QString style = QString(
                         "QMainWindow, QDockWidget, QTreeWidget, QScrollArea, QWidget {"
@@ -862,7 +863,7 @@ void MainWindow::applyStyleSheet() {
                         "#bottomBar[fullscreen=\"true\"] { background-color: %20; border-top: 1px solid %7; }"
                         "#centerContainer { background-color: transparent; }"
                         "#fileInfoLabel { color: %15; font-size: 12px; padding: 0 8px; }"
-                        "#pageLabel { color: %15; font-size: 12px; }"
+                        "#pageLabel { color: %15; font-size: 12px; background-color: transparent; border: 1px solid %21; border-radius: 4px; padding: 2px 4px; }"
                         "#bottomBtn { background-color: transparent; border: none; border-radius: 4px; }"
                         "#bottomBtn:hover { background-color: %16; }"
                         "#infoBlock { background-color: %18; color: %15; font-size: 11px; border-radius: 4px; padding: 2px 8px; }"
@@ -871,7 +872,8 @@ void MainWindow::applyStyleSheet() {
                         .arg(a.uiFontSize)
                         .arg(titleBarBg, menuText, border, selected, accent, progressBg, scrollBg, scrollHandle, scrollHandleHover)
                         .arg(titleBarBg, titleBarText, btnHover, closeHover, bottomBarBg, viewBg)
-                        .arg(bottomBarBgFullscreen);
+                        .arg(bottomBarBgFullscreen)
+                        .arg(pageLabelBorder);
 
     setStyleSheet(style);
 
