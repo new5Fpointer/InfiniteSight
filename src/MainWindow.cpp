@@ -828,7 +828,7 @@ void MainWindow::applyStyleSheet() {
     QString titleBarBg = theme == "dark" ? "#2D2D30" : "#F3F3F3";
     QString titleBarText = theme == "dark" ? "#E0E0E0" : "#000000";
     QString bottomBarBg = theme == "dark" ? "#2D2D30" : "#FFFFFF";
-    QString bottomBarBgFullscreen = theme == "dark" ? "#2D2D30E6" : "#FFFFFFE6";
+    QString bottomBarBgFullscreen = theme == "dark" ? "#E62D2D30" : "#E6FFFFFF";
     QString btnHover = theme == "dark" ? "#3F3F46" : "#E5E5E5";
     QString closeHover = "#E81123";
     QString viewBg = theme == "dark" ? "#1E1E1E" : "#FFFFFF";
