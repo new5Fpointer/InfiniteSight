@@ -14,6 +14,7 @@
 #include <QGraphicsView>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMainWindow>
 #include <QMenu>
 #include <QProgressBar>
@@ -67,6 +68,7 @@ private slots:
     void rotateImage(int angle);
     void mirrorImage();
     void navigateFolderImage(int direction);
+    void jumpToImage(int index);
 
     void onMinimize();
     void onMaximize();
@@ -128,6 +130,7 @@ private:
     QLabel *m_fileFormatLabel;
     QPushButton *m_prevBtn;
     QLabel *m_pageLabel;
+    QLineEdit *m_pageEdit;
     QPushButton *m_nextBtn;
     QPushButton *m_fitBtn;
     QPushButton *m_zoomCombo;

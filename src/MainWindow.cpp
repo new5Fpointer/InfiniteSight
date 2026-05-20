@@ -315,11 +315,47 @@ void MainWindow::createBottomBar() {
     connect(m_prevBtn, &QPushButton::clicked, this, [this]() { navigateFolderImage(-1); });
     centerLayout->addWidget(m_prevBtn);
 
-    m_pageLabel = new QLabel("0 / 0", this);
+    QWidget *pageContainer = new QWidget(m_centerContainer);
+    pageContainer->setObjectName("pageContainer");
+    pageContainer->setFixedWidth(60);
+    QHBoxLayout *pageLayout = new QHBoxLayout(pageContainer);
+    pageLayout->setContentsMargins(0, 0, 0, 0);
+    pageLayout->setSpacing(0);
+
+    m_pageLabel = new QLabel("0 / 0", pageContainer);
     m_pageLabel->setObjectName("pageLabel");
     m_pageLabel->setAlignment(Qt::AlignCenter);
-    m_pageLabel->setFixedWidth(60);
-    centerLayout->addWidget(m_pageLabel);
+    m_pageLabel->setFixedHeight(24);
+    m_pageLabel->setCursor(Qt::PointingHandCursor);
+    m_pageLabel->installEventFilter(this);
+    pageLayout->addWidget(m_pageLabel);
+
+    m_pageEdit = new QLineEdit(pageContainer);
+    m_pageEdit->setObjectName("pageEdit");
+    m_pageEdit->setFixedHeight(24);
+    m_pageEdit->setAlignment(Qt::AlignCenter);
+    m_pageEdit->setVisible(false);
+    connect(m_pageEdit, &QLineEdit::editingFinished, this, [this]() {
+        QString text = m_pageEdit->text().trimmed();
+        m_pageEdit->setVisible(false);
+        m_pageLabel->setVisible(true);
+        if (m_bottomBarTimer)
+            m_bottomBarTimer->start();
+        if (text.isEmpty())
+            return;
+        bool ok;
+        int page = text.toInt(&ok);
+        if (ok && page > 0) {
+            jumpToImage(page - 1);
+        }
+    });
+    connect(m_pageEdit, &QLineEdit::returnPressed, this, [this]() {
+        m_pageEdit->clearFocus();
+    });
+    m_pageEdit->setAttribute(Qt::WA_TransparentForMouseEvents, false);
+    pageLayout->addWidget(m_pageEdit);
+
+    centerLayout->addWidget(pageContainer);
 
     m_nextBtn = createBottomBtn("chevron-right");
     connect(m_nextBtn, &QPushButton::clicked, this, [this]() { navigateFolderImage(1); });
@@ -691,10 +727,19 @@ void MainWindow::navigateFolderImage(int direction) {
     if (newIndex == m_currentFolderIndex)
         return;
 
+    jumpToImage(newIndex);
+}
+
+void MainWindow::jumpToImage(int index) {
+    if (m_currentFolderImages.isEmpty() || index < 0 || index >= m_currentFolderImages.size())
+        return;
+    if (index == m_currentFolderIndex)
+        return;
+
     stopCurrentLoading();
     resetCanvas();
-    startImageLoading(m_currentFolderImages[newIndex]);
-    m_currentFolderIndex = newIndex;
+    startImageLoading(m_currentFolderImages[index]);
+    m_currentFolderIndex = index;
 }
 
 void MainWindow::startImageLoading(const QString &filePath) {
@@ -863,7 +908,9 @@ void MainWindow::applyStyleSheet() {
                         "#bottomBar[fullscreen=\"true\"] { background-color: %20; border-top: 1px solid %7; }"
                         "#centerContainer { background-color: transparent; }"
                         "#fileInfoLabel { color: %15; font-size: 12px; padding: 0 8px; }"
+                        "#pageContainer { background-color: transparent; }"
                         "#pageLabel { color: %15; font-size: 12px; background-color: transparent; border: 1px solid %21; border-radius: 4px; padding: 2px 4px; }"
+                        "#pageEdit { color: %15; font-size: 12px; background-color: transparent; border: 1px solid %21; border-radius: 4px; padding: 2px 4px; }"
                         "#bottomBtn { background-color: transparent; border: none; border-radius: 4px; }"
                         "#bottomBtn:hover { background-color: %16; }"
                         "#infoBlock { background-color: %18; color: %15; font-size: 11px; border-radius: 4px; padding: 2px 8px; }"
@@ -1068,6 +1115,19 @@ void MainWindow::hideBottomBarAnimated() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+    if (obj == m_pageLabel && event->type() == QEvent::MouseButtonRelease) {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton && !m_currentFolderImages.isEmpty()) {
+            m_pageLabel->setVisible(false);
+            m_pageEdit->setText(QString::number(m_currentFolderIndex + 1));
+            m_pageEdit->setVisible(true);
+            m_pageEdit->setFocus();
+            m_pageEdit->selectAll();
+            if (m_bottomBarTimer)
+                m_bottomBarTimer->stop();
+            return true;
+        }
+    }
     if (event->type() == QEvent::MouseMove && isFullScreen() && m_bottomBar) {
         QMouseEvent *me = static_cast<QMouseEvent *>(event);
         QPoint localPos = mapFromGlobal(me->globalPosition().toPoint());
@@ -1080,7 +1140,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             }
             m_bottomBarTimer->stop();
         } else {
-            if (m_bottomBar->isVisible()) {
+            if (m_bottomBar->isVisible() && !(m_pageEdit && m_pageEdit->isVisible())) {
                 m_bottomBarTimer->start();
             }
         }
@@ -1116,7 +1176,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event) {
             }
             m_bottomBarTimer->stop();
         } else {
-            if (m_bottomBar->isVisible()) {
+            if (m_bottomBar->isVisible() && !(m_pageEdit && m_pageEdit->isVisible())) {
                 m_bottomBarTimer->start();
             }
         }
