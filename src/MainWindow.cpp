@@ -699,6 +699,8 @@ void MainWindow::rotateImage(int angle) {
     transform.rotate(angle);
     QPixmap rotated = current.transformed(transform, Qt::SmoothTransformation);
     m_pixmapItem->setPixmap(rotated);
+
+    m_graphicsView->setSceneRect(m_graphicsScene->itemsBoundingRect());
     m_graphicsView->fitInView(m_pixmapItem, Qt::KeepAspectRatio);
 }
 
@@ -712,7 +714,6 @@ void MainWindow::mirrorImage() {
 
     QTransform transform;
     transform.scale(-1, 1);
-    transform.translate(-current.width(), 0);
     QPixmap mirrored = current.transformed(transform, Qt::SmoothTransformation);
     m_pixmapItem->setPixmap(mirrored);
 }
