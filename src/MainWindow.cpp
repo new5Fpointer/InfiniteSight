@@ -181,10 +181,10 @@ void MainWindow::setupUi() {
         Qt::WindowFlags flags = windowFlags();
         if (flags & Qt::WindowStaysOnTopHint) {
             setWindowFlags(flags & ~Qt::WindowStaysOnTopHint);
-            m_pinBtn->setStyleSheet("");
+            m_pinBtn->setIcon(themedIcon("pin"));
         } else {
             setWindowFlags(flags | Qt::WindowStaysOnTopHint);
-            m_pinBtn->setStyleSheet("background-color: #3F3F46;");
+            m_pinBtn->setIcon(themedIcon("pin-off"));
         }
         show();
     });
@@ -955,8 +955,13 @@ void MainWindow::refreshToolBarIcons() {
     }
     if (m_menuBtn)
         m_menuBtn->setIcon(themedIcon("menu"));
-    if (m_pinBtn)
-        m_pinBtn->setIcon(themedIcon("pin"));
+    if (m_pinBtn) {
+        Qt::WindowFlags flags = windowFlags();
+        if (flags & Qt::WindowStaysOnTopHint)
+            m_pinBtn->setIcon(themedIcon("pin-off"));
+        else
+            m_pinBtn->setIcon(themedIcon("pin"));
+    }
     if (m_minBtn)
         m_minBtn->setIcon(themedIcon("minimize"));
     if (m_maxBtn)
