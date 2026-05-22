@@ -65,6 +65,7 @@ private slots:
     void zoomOut();
     void actualSize();
     void fitToWindow();
+    void toggleFitActualSize();
     void rotateImage(int angle);
     void mirrorImage();
     void navigateFolderImage(int direction);
@@ -142,6 +143,7 @@ private:
     QPushButton *m_deleteBtn;
     QPushButton *m_fullscreenBtn;
     bool m_bottomBarInLayout = false;
+    bool m_isFitToWindow = true;
 
     QSplitter *m_splitter;
     ZoomableGraphicsView *m_graphicsView;

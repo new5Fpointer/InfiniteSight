@@ -367,7 +367,7 @@ void MainWindow::createBottomBar() {
 
     m_fitBtn = createBottomBtn("fit-screen");
     m_fitBtn->setToolTip(tr("Fit to Window"));
-    connect(m_fitBtn, &QPushButton::clicked, this, &MainWindow::fitToWindow);
+    connect(m_fitBtn, &QPushButton::clicked, this, &MainWindow::toggleFitActualSize);
     centerLayout->addWidget(m_fitBtn);
 
     m_zoomCombo = createBottomBtn("", 56);
@@ -689,6 +689,29 @@ void MainWindow::fitToWindow() {
     }
 }
 
+void MainWindow::toggleFitActualSize() {
+    if (!m_pixmapItem)
+        return;
+
+    if (m_isFitToWindow) {
+        actualSize();
+    } else {
+        fitToWindow();
+    }
+
+    m_isFitToWindow = !m_isFitToWindow;
+
+    if (m_fitBtn) {
+        if (m_isFitToWindow) {
+            m_fitBtn->setIcon(themedIcon("actual-size"));
+            m_fitBtn->setToolTip(tr("Actual Size"));
+        } else {
+            m_fitBtn->setIcon(themedIcon("fit-screen"));
+            m_fitBtn->setToolTip(tr("Fit to Window"));
+        }
+    }
+}
+
 void MainWindow::rotateImage(int angle) {
     if (!m_pixmapItem)
         return;
@@ -786,7 +809,11 @@ void MainWindow::onImageLoaded(const QPixmap &pixmap, const QString &filePath, c
     m_pixmapItem->setTransformationMode(Qt::SmoothTransformation);
     m_graphicsScene->addItem(m_pixmapItem);
     m_graphicsView->setSceneRect(m_graphicsScene->itemsBoundingRect());
-    m_graphicsView->fitInView(m_pixmapItem, Qt::KeepAspectRatio);
+    if (m_isFitToWindow) {
+        m_graphicsView->fitInView(m_pixmapItem, Qt::KeepAspectRatio);
+    } else {
+        m_graphicsView->resetTransform();
+    }
     m_graphicsView->horizontalScrollBar()->setValue(0);
     m_graphicsView->verticalScrollBar()->setValue(0);
 
@@ -975,8 +1002,15 @@ void MainWindow::refreshToolBarIcons() {
         m_prevBtn->setIcon(themedIcon("chevron-left"));
     if (m_nextBtn)
         m_nextBtn->setIcon(themedIcon("chevron-right"));
-    if (m_fitBtn)
-        m_fitBtn->setIcon(themedIcon("fit-screen"));
+    if (m_fitBtn) {
+        if (m_isFitToWindow) {
+            m_fitBtn->setIcon(themedIcon("actual-size"));
+            m_fitBtn->setToolTip(tr("Actual Size"));
+        } else {
+            m_fitBtn->setIcon(themedIcon("fit-screen"));
+            m_fitBtn->setToolTip(tr("Fit to Window"));
+        }
+    }
     if (m_zoomOutBtn)
         m_zoomOutBtn->setIcon(themedIcon("zoom-out"));
     if (m_zoomInBtn)
