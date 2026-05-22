@@ -182,9 +182,11 @@ void MainWindow::setupUi() {
         if (flags & Qt::WindowStaysOnTopHint) {
             setWindowFlags(flags & ~Qt::WindowStaysOnTopHint);
             m_pinBtn->setIcon(themedIcon("pin"));
+            m_pinBtn->setStyleSheet("");
         } else {
             setWindowFlags(flags | Qt::WindowStaysOnTopHint);
             m_pinBtn->setIcon(themedIcon("pin-off"));
+            m_pinBtn->setStyleSheet("background-color: #3F3F46;");
         }
         show();
     });
