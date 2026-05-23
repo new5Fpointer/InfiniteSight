@@ -254,7 +254,16 @@ void CustomMenu::showSubMenu(CustomMenuItem *item) {
     m_subMenu = sub;
 
     QPoint p = mapToGlobal(item->geometry().topRight());
-    sub->popup(p + QPoint(-4, 0));
+    QRect screen = QApplication::primaryScreen()->availableGeometry();
+
+    if (p.x() + sub->width() > screen.right()) {
+        QPoint leftPos = mapToGlobal(item->geometry().topLeft()) - QPoint(sub->width() + 4, 0);
+        p = leftPos;
+    } else {
+        p += QPoint(4, 0);
+    }
+
+    sub->popup(p);
 
     connect(sub, &CustomMenu::menuClosed, this, [this]() {
         m_subMenu = nullptr;
