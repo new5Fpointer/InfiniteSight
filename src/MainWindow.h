@@ -56,8 +56,6 @@ public slots:
 
 private slots:
     void openImage();
-    void openRecentFile();
-    void clearRecentFiles();
     void toggleInfoPanel(bool visible);
     void openSettings();
     void switchTheme(const QString &theme);
@@ -98,7 +96,6 @@ private:
     void createToolBar();
     void createTitleBar();
     void createBottomBar();
-    void updateRecentFilesMenu();
     void startImageLoading(const QString &filePath);
     void stopCurrentLoading();
     void resetCanvas();
@@ -160,7 +157,6 @@ private:
 
     CustomMenu *m_customMenu = nullptr;
     QMenu *m_fileMenu;
-    QMenu *m_recentMenu;
     QMenu *m_viewMenu;
     QMenu *m_settingsMenu;
     QAction *m_openAction;
@@ -169,7 +165,6 @@ private:
     QAction *m_settingsAction;
     QAction *m_darkAction;
     QAction *m_lightAction;
-    QAction *m_clearAction;
 
     QAction *m_zoomInAction;
     QAction *m_zoomOutAction;

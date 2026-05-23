@@ -475,9 +475,6 @@ void MainWindow::createMenus() {
     connect(m_openAction, &QAction::triggered, this, &MainWindow::openImage);
     m_fileMenu->addAction(m_openAction);
 
-    m_recentMenu = m_fileMenu->addMenu(tr("Recent Files"));
-    updateRecentFilesMenu();
-
     m_fileMenu->addSeparator();
 
     m_exitAction = new QAction(tr("E&xit"), this);
@@ -569,32 +566,6 @@ void MainWindow::createToolBar() {
     connect(m_nextImageAction, &QAction::triggered, this, [this]() { navigateFolderImage(1); });
 }
 
-void MainWindow::updateRecentFilesMenu() {
-    m_recentMenu->clear();
-    QStringList recentFiles = m_settingsManager->general().recentFiles;
-
-    if (recentFiles.isEmpty()) {
-        QAction *noFilesAction = new QAction(tr("No recent files"), this);
-        noFilesAction->setEnabled(false);
-        m_recentMenu->addAction(noFilesAction);
-        return;
-    }
-
-    for (const QString &filePath : recentFiles) {
-        if (QFile::exists(filePath)) {
-            QAction *action = new QAction(QFileInfo(filePath).fileName(), this);
-            action->setData(filePath);
-            connect(action, &QAction::triggered, this, &MainWindow::openRecentFile);
-            m_recentMenu->addAction(action);
-        }
-    }
-
-    m_recentMenu->addSeparator();
-    m_clearAction = new QAction(tr("Clear Recent Files"), this);
-    connect(m_clearAction, &QAction::triggered, this, &MainWindow::clearRecentFiles);
-    m_recentMenu->addAction(m_clearAction);
-}
-
 void MainWindow::openImage() {
     QString filePath = QFileDialog::getOpenFileName(this, tr("Open Image"), "",
                                                     tr("Images (*.png *.jpg *.jpeg *.bmp *.gif *.tiff *.tif *.webp)"));
@@ -602,30 +573,8 @@ void MainWindow::openImage() {
     if (!filePath.isEmpty()) {
         stopCurrentLoading();
         resetCanvas();
-        m_settingsManager->addRecentFile(filePath);
-        updateRecentFilesMenu();
         startImageLoading(filePath);
     }
-}
-
-void MainWindow::openRecentFile() {
-    QAction *action = qobject_cast<QAction *>(sender());
-    if (!action)
-        return;
-
-    QString filePath = action->data().toString();
-    if (QFile::exists(filePath)) {
-        stopCurrentLoading();
-        resetCanvas();
-        startImageLoading(filePath);
-    } else {
-        qDebug().noquote() << tr("File not found: %1").arg(filePath);
-    }
-}
-
-void MainWindow::clearRecentFiles() {
-    m_settingsManager->clearRecentFiles();
-    updateRecentFilesMenu();
 }
 
 void MainWindow::toggleInfoPanel(bool visible) {
@@ -1320,8 +1269,6 @@ void MainWindow::handleFileDrop(const QStringList &paths) {
         if (exts.contains(ext)) {
             stopCurrentLoading();
             resetCanvas();
-            m_settingsManager->addRecentFile(path);
-            updateRecentFilesMenu();
             startImageLoading(path);
             break;
         }
@@ -1371,31 +1318,6 @@ void MainWindow::showCustomMenu() {
     m_customMenu->addMenuItem(openItem);
 
     m_customMenu->addSeparator();
-
-    QStringList recentFiles = m_settingsManager->general().recentFiles;
-    if (!recentFiles.isEmpty()) {
-        for (const QString &filePath : recentFiles) {
-            if (QFile::exists(filePath)) {
-                MenuItem recentItem;
-                recentItem.type = MenuItem::Action;
-                recentItem.text = QFileInfo(filePath).fileName();
-                recentItem.callback = [this, filePath]() {
-                    stopCurrentLoading();
-                    resetCanvas();
-                    startImageLoading(filePath);
-                };
-                m_customMenu->addMenuItem(recentItem);
-            }
-        }
-        m_customMenu->addSeparator();
-
-        MenuItem clearItem;
-        clearItem.type = MenuItem::Action;
-        clearItem.text = tr("Clear Recent Files");
-        clearItem.callback = [this]() { clearRecentFiles(); };
-        m_customMenu->addMenuItem(clearItem);
-        m_customMenu->addSeparator();
-    }
 
     MenuItem themeItem;
     themeItem.type = MenuItem::SubMenu;
