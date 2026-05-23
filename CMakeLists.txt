@@ -22,6 +22,7 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ImageLoader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ImageCache.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/CustomMenu.cpp
 )
 
 set(HEADERS
@@ -30,6 +31,7 @@ set(HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ImageLoader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ImageCache.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/CustomMenu.h
 )
 
 set(RESOURCES

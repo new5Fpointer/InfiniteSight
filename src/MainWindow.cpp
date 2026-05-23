@@ -170,10 +170,7 @@ void MainWindow::setupUi() {
     };
 
     m_menuBtn = createTitleBtn("menu");
-    connect(m_menuBtn, &QPushButton::clicked, this, [this]() {
-        QPoint pos = m_menuBtn->mapToGlobal(QPoint(0, m_menuBtn->height()));
-        m_fileMenu->exec(pos);
-    });
+    connect(m_menuBtn, &QPushButton::clicked, this, &MainWindow::showCustomMenu);
     titleLayout->addWidget(m_menuBtn);
 
     m_pinBtn = createTitleBtn("pin");
@@ -1355,4 +1352,89 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     } else {
         QMainWindow::keyPressEvent(event);
     }
+}
+
+void MainWindow::showCustomMenu() {
+    if (m_customMenu) {
+        m_customMenu->closeMenu();
+        delete m_customMenu;
+        m_customMenu = nullptr;
+    }
+
+    m_customMenu = new CustomMenu(this);
+
+    MenuItem openItem;
+    openItem.type = MenuItem::Action;
+    openItem.text = tr("Open Image");
+    openItem.shortcut = "Ctrl+O";
+    openItem.callback = [this]() { openImage(); };
+    m_customMenu->addMenuItem(openItem);
+
+    m_customMenu->addSeparator();
+
+    QStringList recentFiles = m_settingsManager->general().recentFiles;
+    if (!recentFiles.isEmpty()) {
+        for (const QString &filePath : recentFiles) {
+            if (QFile::exists(filePath)) {
+                MenuItem recentItem;
+                recentItem.type = MenuItem::Action;
+                recentItem.text = QFileInfo(filePath).fileName();
+                recentItem.callback = [this, filePath]() {
+                    stopCurrentLoading();
+                    resetCanvas();
+                    startImageLoading(filePath);
+                };
+                m_customMenu->addMenuItem(recentItem);
+            }
+        }
+        m_customMenu->addSeparator();
+
+        MenuItem clearItem;
+        clearItem.type = MenuItem::Action;
+        clearItem.text = tr("Clear Recent Files");
+        clearItem.callback = [this]() { clearRecentFiles(); };
+        m_customMenu->addMenuItem(clearItem);
+        m_customMenu->addSeparator();
+    }
+
+    MenuItem themeItem;
+    themeItem.type = MenuItem::SubMenu;
+    themeItem.text = tr("Change Theme");
+
+    MenuItem darkSub;
+    darkSub.type = MenuItem::Action;
+    darkSub.text = tr("Professional Dark");
+    darkSub.checkable = true;
+    darkSub.checked = m_settingsManager->appearance().theme == "dark";
+    darkSub.callback = [this]() { switchTheme("dark"); };
+    themeItem.children.append(darkSub);
+
+    MenuItem lightSub;
+    lightSub.type = MenuItem::Action;
+    lightSub.text = tr("Classic White");
+    lightSub.checkable = true;
+    lightSub.checked = m_settingsManager->appearance().theme == "light";
+    lightSub.callback = [this]() { switchTheme("light"); };
+    themeItem.children.append(lightSub);
+
+    m_customMenu->addMenuItem(themeItem);
+
+    MenuItem settingsItem;
+    settingsItem.type = MenuItem::Action;
+    settingsItem.text = tr("Settings");
+    settingsItem.shortcut = "F10";
+    settingsItem.callback = [this]() { openSettings(); };
+    m_customMenu->addMenuItem(settingsItem);
+
+    m_customMenu->addSeparator();
+
+    MenuItem exitItem;
+    exitItem.type = MenuItem::Action;
+    exitItem.text = tr("Exit");
+    exitItem.shortcut = "Ctrl+Q";
+    exitItem.callback = [this]() { close(); };
+    m_customMenu->addMenuItem(exitItem);
+
+    QPoint pos = m_menuBtn->mapToGlobal(QPoint(0, m_menuBtn->height()));
+    m_customMenu->popup(pos);
 }
